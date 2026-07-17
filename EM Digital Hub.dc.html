@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+html,body{margin:0;padding:0;background:#0A0C0A}
+body{font-family:'Montserrat',sans-serif}
+a{color:#22E07C;text-decoration:none}
+a:hover{color:#4DE996}
+*{box-sizing:border-box}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+<div style="min-height:100vh; color:#F4F6F3; font-family:'Montserrat',sans-serif; --accent:#22E07C; --bg:#0A0C0A; --card:#111411; --card2:#151915; --border:rgba(255,255,255,0.07); --dim:#A8B0AA; --glow:rgba(34,224,124,0.09); background:var(--bg); {{ modeVars }}">
+<div style="position:fixed; inset:0; pointer-events:none; background:radial-gradient(720px 460px at 88% -6%, var(--glow), transparent 70%); z-index:0"></div>
+
+<div style="position:relative; z-index:1; display:flex; min-height:100vh">
+
+  <!-- SIDEBAR -->
+  <div style="width:214px; flex:0 0 214px; background:var(--card2); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:20px 0 16px">
+    <sc-if value="{{ isConsole }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:0 18px 18px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:20px; font-weight:600"><span style="color:var(--accent)">EM</span> <span style="color:#F4F6F3">Digital</span></div>
+    </sc-if>
+    <sc-if value="{{ isHub }}">
+      <div style="padding:0 18px 18px; display:flex; align-items:center; gap:10px">
+        <div style="width:30px; height:30px; border-radius:99px; background:var(--accent); color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px">PC</div>
+        <div>
+          <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:15px; font-weight:600; line-height:1.1">PierCar</div>
+          <div style="font-size:10px; color:var(--dim)">Multimarcas</div>
+        </div>
+      </div>
+    </sc-if>
+    <div style="margin:0 18px 14px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; gap:10px">
+      <div style="width:26px; height:26px; border-radius:99px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--dim)">{{ userInitials }}</div>
+      <div style="min-width:0">
+        <div style="font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ userName }}</div>
+        <div style="font-size:9px; color:var(--dim)">{{ userRole }}</div>
+      </div>
+    </div>
+    <div style="margin:0 18px 16px; display:flex; align-items:center; gap:7px; font-size:10px; color:var(--dim)">
+      <span style="width:6px; height:6px; border-radius:99px; background:var(--accent); display:inline-block"></span>
+      <span>Operacional, sem alertas</span>
+    </div>
+    <div style="flex:1; overflow-y:auto">
+      <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="2">
+        <div style="padding:8px 0 4px">
+          <div style="padding:0 18px 6px; font-size:9px; letter-spacing:0.2em; color:var(--dim); font-weight:600">{{ g.t }}</div>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+            <div onClick="{{ it.go }}" style="padding:8px 18px 8px 16px; cursor:pointer; font-size:12.5px; border-left:2px solid {{ it.bc }}; color: {{ it.c }}; font-weight: {{ it.w }}" style-hover="color:#F4F6F3">{{ it.l }}</div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin:14px 18px 0; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:14px">
+      <div style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">{{ metaLabel }}</div>
+      <div style="margin-top:6px; font-size:12px; font-weight:600">{{ metaValor }}</div>
+      <div style="margin-top:8px; height:4px; border-radius:99px; background:rgba(255,255,255,0.08)">
+        <div style="height:4px; border-radius:99px; background:var(--accent); width: {{ metaPct }}"></div>
+      </div>
+      <div style="margin-top:6px; font-size:10px; color:var(--dim)">{{ metaSub }}</div>
+    </div>
+    <sc-if value="{{ isHub }}">
+      <div style="margin:12px 18px 0; padding-top:12px; border-top:1px solid var(--border); font-size:10px; color:var(--dim)">Operado por <span style="font-family:'Montserrat',sans-serif; font-weight:700; color:#22E07C">EM</span> <span style="font-family:'Montserrat',sans-serif">Digital</span></div>
+    </sc-if>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column">
+
+    <!-- TOP BAR -->
+    <div style="height:58px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:0 26px">
+      <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px">
+        <div onClick="{{ goConsole }}" style="padding:6px 16px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer; background: {{ swCBg }}; color: {{ swCFg }}">Console EM Digital</div>
+        <div onClick="{{ goHub }}" style="padding:6px 16px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer; background: {{ swHBg }}; color: {{ swHFg }}">Hub: PierCar</div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="font-size:9px; letter-spacing:0.18em; font-weight:600; color:var(--dim)">{{ topLabel }}</div>
+      <div style="padding:5px 14px; border:1px solid var(--accent); border-radius:999px; font-size:9px; letter-spacing:0.14em; font-weight:700; color:var(--accent)">{{ topBadge }}</div>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding:30px 32px 48px">
+
+    <!-- ============ CONSOLE 1: VISÃO GERAL ============ -->
+    <sc-if value="{{ sC1 }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Console: Visão geral" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">TEMPO REAL</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Visão geral</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:18px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:18px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px">
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">RECORRENTE</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">R$ 1.500</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">6 clientes ativos</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">CUSTO CLAUDE</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">R$ 431</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">28,7% da receita</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--accent); font-weight:600">MARGEM</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--accent)">R$ 1.069</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">71,3% da receita</div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">CONSUMO DE TOKENS</div>
+            <div style="margin-top:4px; font-size:14px; font-weight:700">Consumo por cliente</div>
+            <div style="margin-top:16px; display:flex; flex-direction:column; gap:12px">
+              <sc-for list="{{ consumo }}" as="b" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:150px 1fr 56px; gap:12px; align-items:center">
+                  <div style="font-size:11.5px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ b.nome }}</div>
+                  <div style="height:8px; border-radius:99px; background:rgba(255,255,255,0.06)">
+                    <div style="height:8px; border-radius:99px; background: {{ b.cor }}; width: {{ b.pct }}"></div>
+                  </div>
+                  <div style="font-size:11px; font-variant-numeric:tabular-nums; text-align:right; color:var(--dim)">{{ b.val }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; color:var(--dim)">374,7k tokens no ciclo, trabalho real sem cache</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:18px">
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; display:flex; gap:14px; justify-content:space-around">
+            <div style="text-align:center">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"></circle>
+                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="104 226.2" transform="rotate(-90 44 44)"></circle>
+                <text x="44" y="49" text-anchor="middle" fill="#F4F6F3" font-size="16" font-weight="700" font-family="Montserrat">46%</text>
+              </svg>
+              <div style="margin-top:6px; font-size:9px; letter-spacing:0.14em; color:var(--dim); font-weight:600">USO DA ASSINATURA</div>
+            </div>
+            <div style="text-align:center">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"></circle>
+                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="212.6 226.2" transform="rotate(-90 44 44)"></circle>
+                <text x="44" y="49" text-anchor="middle" fill="#F4F6F3" font-size="16" font-weight="700" font-family="Montserrat">94%</text>
+              </svg>
+              <div style="margin-top:6px; font-size:9px; letter-spacing:0.14em; color:var(--dim); font-weight:600">SAÚDE MÉDIA</div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">O QUE PRECISA DE VOCÊ</div>
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; gap:10px; align-items:flex-start">
+                <span style="width:7px; height:7px; border-radius:99px; background:#E5484D; margin-top:4px; flex:0 0 auto"></span>
+                <div style="font-size:11.5px; line-height:1.45">Ariza chegou a 84% do teto de tokens</div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start">
+                <span style="width:7px; height:7px; border-radius:99px; background:#EAB308; margin-top:4px; flex:0 0 auto"></span>
+                <div style="font-size:11.5px; line-height:1.45">Carrossel da PierCar aguardando aprovação desde 14:32</div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start">
+                <span style="width:7px; height:7px; border-radius:99px; background:#8A8F98; margin-top:4px; flex:0 0 auto"></span>
+                <div style="font-size:11.5px; line-height:1.45">Nova Ótica sem conexão Claude, hub em configuração</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ÚLTIMOS HUBS ENTREGUES</div>
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>PierCar Multimarcas</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">12/07</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Tuba Lyra</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">28/06</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Odonto Max</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">15/06</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CONSOLE 2: CLIENTES ============ -->
+    <sc-if value="{{ sC2 }}">
+    <div data-screen-label="Console: Clientes" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">6 CONTAS</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Clientes</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:flex; gap:12px; margin-bottom:18px">
+        <div style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:10px 18px; font-size:12px; color:var(--dim)">Buscar por nome, slug ou domínio</div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:999px; padding:10px 18px; font-size:11px; font-weight:600; color:var(--dim); cursor:pointer">Todos os status</div>
+        <div style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:10px 20px; font-size:11px; font-weight:700; cursor:pointer">Novo cliente</div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden">
+        <div style="display:grid; grid-template-columns:2.1fr 1.5fr 1.1fr 0.8fr 1.2fr 0.9fr; gap:10px; padding:12px 20px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">
+          <div>CLIENTE</div><div>MÓDULOS</div><div>CONEXÃO CLAUDE</div><div>CUSTO</div><div>TETO</div><div>STATUS</div>
+        </div>
+        <sc-for list="{{ clientes }}" as="cl" hint-placeholder-count="6">
+          <div style="display:grid; grid-template-columns:2.1fr 1.5fr 1.1fr 0.8fr 1.2fr 0.9fr; gap:10px; padding:14px 20px; border-bottom:1px solid var(--border); align-items:center">
+            <div style="display:flex; align-items:center; gap:11px; min-width:0">
+              <div style="width:30px; height:30px; border-radius:99px; background: {{ cl.cor }}; color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px; flex:0 0 auto">{{ cl.ini }}</div>
+              <div style="min-width:0">
+                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ cl.nome }}</div>
+                <div style="font-size:10px; color:var(--dim)">{{ cl.slug }}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap">
+              <sc-for list="{{ cl.modulos }}" as="m" hint-placeholder-count="2">
+                <span style="padding:3px 9px; border:1px solid var(--border); border-radius:999px; font-size:9.5px; color:var(--dim)">{{ m }}</span>
+              </sc-for>
+            </div>
+            <div style="font-size:11px; color:var(--dim)">{{ cl.conexao }}</div>
+            <div style="font-size:11.5px; font-variant-numeric:tabular-nums; white-space:nowrap">{{ cl.custo }}</div>
+            <div style="display:flex; align-items:center; gap:8px">
+              <div style="flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,0.06)">
+                <div style="height:5px; border-radius:99px; background: {{ cl.usoCor }}; width: {{ cl.usoPct }}"></div>
+              </div>
+              <span style="font-size:10.5px; font-variant-numeric:tabular-nums; color:var(--dim)">{{ cl.uso }}</span>
+            </div>
+            <div><span style="padding:4px 11px; border:1px solid {{ cl.stCor }}; color: {{ cl.stCor }}; border-radius:999px; font-size:8.5px; letter-spacing:0.12em; font-weight:700; white-space:nowrap; display:inline-block">{{ cl.status }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CONSOLE 3: CONTAS CLAUDE ============ -->
+    <sc-if value="{{ sC3 }}">
+    <div data-screen-label="Console: Contas Claude" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">2 CONTAS CONECTADAS</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Contas Claude</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px">C</div>
+            <div style="flex:1">
+              <div style="font-size:14px; font-weight:700">Conta Hub</div>
+              <div style="font-size:10.5px; color:var(--dim)">assinatura Max 5x, ciclo renova dia 03</div>
+            </div>
+            <span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">VÁLIDA</span>
+          </div>
+          <div style="margin-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px">
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">CLIENTES</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">4</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">JANELA 5H</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">62%</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">SEMANA</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">41%</div>
+            </div>
+          </div>
+          <div style="margin-top:18px; display:flex; gap:10px">
+            <div style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:9px 20px; font-size:11px; font-weight:700; cursor:pointer">Gerenciar</div>
+            <div style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:9px 20px; font-size:11px; font-weight:600; cursor:pointer">Compartilhada</div>
+          </div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px">T</div>
+            <div style="flex:1">
+              <div style="font-size:14px; font-weight:700">TubaLyra, Claude</div>
+              <div style="font-size:10.5px; color:var(--dim)">conta dedicada do cliente, ciclo renova dia 17</div>
+            </div>
+            <span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">VÁLIDA</span>
+          </div>
+          <div style="margin-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px">
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">CLIENTES</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">1</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">JANELA 5H</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">12%</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:14px">
+              <div style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">SEMANA</div>
+              <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">8%</div>
+            </div>
+          </div>
+          <div style="margin-top:18px; display:flex; gap:10px">
+            <div style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:9px 20px; font-size:11px; font-weight:700; cursor:pointer">Gerenciar</div>
+            <div style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:9px 20px; font-size:11px; font-weight:600; cursor:pointer">Dedicada</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CONSOLE 4: ASSENTOS ============ -->
+    <sc-if value="{{ sC4 }}">
+    <div data-screen-label="Console: Assentos Claude" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">PLANO TEAM</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Assentos Claude</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px; max-width:760px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ASSENTOS</div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">2</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">OCUPADOS</div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--accent)">1</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">OCIOSOS</div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">1</div>
+        </div>
+      </div>
+      <div style="margin-top:18px; background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; max-width:760px">
+        <div style="display:grid; grid-template-columns:0.7fr 1.6fr 1fr 0.9fr 0.9fr; gap:10px; padding:12px 20px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">
+          <div>ASSENTO</div><div>OCUPANTE</div><div>DESDE</div><div>CUSTO</div><div>USO DO TETO</div>
+        </div>
+        <div style="display:grid; grid-template-columns:0.7fr 1.6fr 1fr 0.9fr 0.9fr; gap:10px; padding:14px 20px; border-bottom:1px solid var(--border); align-items:center; font-size:12px">
+          <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px">01</div>
+          <div style="display:flex; align-items:center; gap:10px">
+            <div style="width:26px; height:26px; border-radius:99px; background:#FF7A29; color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px">PC</div>
+            <span>PierCar Multimarcas</span>
+          </div>
+          <div style="color:var(--dim); font-variant-numeric:tabular-nums">12/07/2026</div>
+          <div style="font-variant-numeric:tabular-nums">R$ 276/mês</div>
+          <div style="font-variant-numeric:tabular-nums; color:var(--dim)">12%</div>
+        </div>
+        <div style="display:grid; grid-template-columns:0.7fr 1.6fr 1fr 0.9fr 0.9fr; gap:10px; padding:14px 20px; align-items:center; font-size:12px">
+          <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px; color:var(--dim)">02</div>
+          <div style="color:var(--dim)">Livre, disponível para o próximo cliente Team</div>
+          <div style="color:var(--dim)">, </div>
+          <div style="color:var(--dim)">R$ 0</div>
+          <div style="color:var(--dim)">0%</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CONSOLE 5: TOKENS ============ -->
+    <sc-if value="{{ sC5 }}">
+    <div data-screen-label="Console: Tokens" style="max-width:1280px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">CONSUMO DE TOKENS</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Tokens</h1>
+      <div style="margin-top:6px; font-size:12px; color:var(--dim)">5 clientes com Claude, 374,7k tokens usados no ciclo (trabalho real, sem cache)</div>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 22px"></div>
+      <div style="display:flex; gap:8px; margin-bottom:20px; align-items:center">
+        <span style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">CONTA CLAUDE:</span>
+        <span style="padding:6px 14px; border-radius:999px; background:var(--accent); color:#0A0C0A; font-size:10.5px; font-weight:700; cursor:pointer">Todos os clientes</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Conta Hub 4</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">TubaLyra, Claude 1</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:start">
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px">
+          <sc-for list="{{ tokens }}" as="tk" hint-placeholder-count="4">
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+              <div style="display:flex; align-items:center; gap:10px">
+                <div style="width:26px; height:26px; border-radius:99px; background: {{ tk.cor }}; color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px">{{ tk.ini }}</div>
+                <div style="font-size:13px; font-weight:700">{{ tk.nome }}</div>
+              </div>
+              <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:8px 14px">
+                <div style="display:flex; justify-content:space-between; font-size:10.5px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-right:6px"></span>Chat</span><span style="font-variant-numeric:tabular-nums">{{ tk.chat }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:10.5px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:var(--accent); margin-right:6px"></span>Gerador</span><span style="font-variant-numeric:tabular-nums">{{ tk.gerador }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:10.5px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#EAB308; margin-right:6px"></span>Haiku</span><span style="font-variant-numeric:tabular-nums">{{ tk.haiku }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:10.5px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#B08CFF; margin-right:6px"></span>Opus</span><span style="font-variant-numeric:tabular-nums">{{ tk.opus }}</span></div>
+              </div>
+              <svg width="100%" height="54" viewBox="0 0 260 54" preserveAspectRatio="none" style="margin-top:12px; display:block">
+                <path d="{{ tk.area }}" fill="rgba(255,255,255,0.05)"></path>
+                <path d="{{ tk.linha }}" fill="none" stroke="{{ tk.cor }}" stroke-width="1.5"></path>
+              </svg>
+              <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:baseline">
+                <span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums">{{ tk.usado }}</span>
+                <span style="font-size:10.5px; color:var(--dim); font-variant-numeric:tabular-nums">/ {{ tk.teto }}</span>
+              </div>
+              <div style="margin-top:10px; display:flex; align-items:center; gap:10px">
+                <span style="font-size:8.5px; letter-spacing:0.14em; color:var(--dim); font-weight:600">LIMITE</span>
+                <div style="flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,0.08); position:relative">
+                  <div style="height:4px; border-radius:99px; background:var(--accent); width: {{ tk.limPct }}"></div>
+                  <div style="position:absolute; top:-4px; left: {{ tk.limPct }}; width:12px; height:12px; margin-left:-6px; border-radius:99px; background:#F4F6F3"></div>
+                </div>
+              </div>
+              <div style="margin-top:14px; display:flex; gap:8px">
+                <div style="flex:1; border:1px solid var(--border); border-radius:999px; padding:7px 0; text-align:center; font-size:10.5px; font-weight:600; color:var(--dim); cursor:pointer">Travar</div>
+                <div style="border:1px solid var(--border); border-radius:999px; padding:7px 14px; font-size:10.5px; font-weight:600; color:var(--dim); cursor:pointer">Atualizar</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px; position:sticky; top:0">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ASSINATURA HUB</div>
+          <div style="margin-top:4px; font-size:11px; color:var(--dim)">4 clientes compartilham esta conta</div>
+          <div style="margin-top:14px; display:flex; align-items:baseline; gap:10px">
+            <span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(28px,3vw,40px); white-space:nowrap; font-variant-numeric:tabular-nums">374,7k</span>
+            <span style="font-size:10.5px; color:var(--dim)">sem teto</span>
+          </div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:9px">
+            <div style="display:flex; justify-content:space-between; font-size:11px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-right:7px"></span>Chat (Sonnet)</span><span style="font-variant-numeric:tabular-nums">24,4k</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:var(--accent); margin-right:7px"></span>Gerador de conteúdo</span><span style="font-variant-numeric:tabular-nums">124,4k</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#EAB308; margin-right:7px"></span>Haiku</span><span style="font-variant-numeric:tabular-nums">0</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px"><span style="color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#B08CFF; margin-right:7px"></span>Opus</span><span style="font-variant-numeric:tabular-nums">225,9k</span></div>
+          </div>
+          <svg width="100%" height="90" viewBox="0 0 256 90" preserveAspectRatio="none" style="margin-top:16px; display:block">
+            <line x1="0" y1="30" x2="256" y2="30" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 6"></line>
+            <line x1="0" y1="60" x2="256" y2="60" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 6"></line>
+            <path d="M0,78 L36,72 L72,64 L108,66 L144,50 L180,44 L216,28 L256,14 L256,90 L0,90 Z" fill="rgba(34,224,124,0.10)"></path>
+            <path d="M0,78 L36,72 L72,64 L108,66 L144,50 L180,44 L216,28 L256,14" fill="none" stroke="var(--accent)" stroke-width="1.5"></path>
+            <circle cx="256" cy="14" r="3.5" fill="var(--accent)"></circle>
+          </svg>
+          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border)">
+            <div style="display:flex; justify-content:space-between; font-size:9px; letter-spacing:0.14em; color:var(--dim); font-weight:600"><span>LIMITE DO HUB</span><span>ILIMITADO</span></div>
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px">
+              <div style="flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,0.08); position:relative">
+                <div style="position:absolute; top:-4px; left:0; width:12px; height:12px; border-radius:99px; background:#F4F6F3"></div>
+              </div>
+              <div style="border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:5px 14px; font-size:10px; font-weight:700; cursor:pointer">Aplicar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 1: VISÃO GERAL ============ -->
+    <sc-if value="{{ sH1 }}">
+    <div data-screen-label="Hub: Visão geral" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">SEU NEGÓCIO HOJE</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Visão geral</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:18px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:18px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px">
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ESTOQUE</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">34</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">veículos anunciados</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">VISITAS AO SITE</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums">1.247</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">últimos 7 dias</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--accent); font-weight:600">LEADS NO WHATSAPP</div>
+              <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--accent)">18</div>
+              <div style="margin-top:6px; font-size:11px; color:var(--dim)">3 aguardando resposta</div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline">
+              <div>
+                <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">FATURAMENTO</div>
+                <div style="margin-top:4px; font-size:14px; font-weight:700">Últimos 6 meses</div>
+              </div>
+              <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; font-variant-numeric:tabular-nums">R$ 186.400 <span style="font-family:Montserrat; font-size:10px; color:var(--dim)">em julho</span></div>
+            </div>
+            <svg width="100%" height="180" viewBox="0 0 640 180" preserveAspectRatio="none" style="margin-top:14px; display:block">
+              <line x1="0" y1="45" x2="640" y2="45" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+              <line x1="0" y1="90" x2="640" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+              <line x1="0" y1="135" x2="640" y2="135" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+              <path d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30 L632,180 L0,180 Z" fill="rgba(255,122,41,0.12)"></path>
+              <path d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+              <circle cx="632" cy="30" r="4.5" fill="var(--accent)"></circle>
+            </svg>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--dim); margin-top:8px">
+              <span>fev</span><span>mar</span><span>abr</span><span>mai</span><span>jun</span><span>jul</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px">
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; cursor:pointer" style-hover="border-color:var(--accent)">
+              <div style="font-size:13px; font-weight:700">Criar post do estoque</div>
+              <div style="margin-top:4px; font-size:11px; color:var(--dim)">Claude monta em 2 minutos</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; cursor:pointer" style-hover="border-color:var(--accent)">
+              <div style="font-size:13px; font-weight:700">Atualizar estoque</div>
+              <div style="margin-top:4px; font-size:11px; color:var(--dim)">34 veículos no estoque.json</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; cursor:pointer" style-hover="border-color:var(--accent)">
+              <div style="font-size:13px; font-weight:700">Responder leads</div>
+              <div style="margin-top:4px; font-size:11px; color:var(--dim)">3 sem resposta há 2 horas</div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; cursor:pointer" style-hover="border-color:var(--accent)">
+              <div style="font-size:13px; font-weight:700">Relatório de julho</div>
+              <div style="margin-top:4px; font-size:11px; color:var(--dim)">pronto para gerar em PDF</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:18px">
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; display:flex; gap:12px; justify-content:space-around">
+            <div style="text-align:center">
+              <svg width="80" height="80" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"></circle>
+                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="176.4 226.2" transform="rotate(-90 44 44)"></circle>
+                <text x="44" y="49" text-anchor="middle" fill="#F4F6F3" font-size="15" font-weight="700" font-family="Montserrat">78%</text>
+              </svg>
+              <div style="margin-top:6px; font-size:9px; letter-spacing:0.12em; color:var(--dim); font-weight:600">META DE VISITAS</div>
+            </div>
+            <div style="text-align:center">
+              <svg width="80" height="80" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"></circle>
+                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="95 226.2" transform="rotate(-90 44 44)"></circle>
+                <text x="44" y="49" text-anchor="middle" fill="#F4F6F3" font-size="15" font-weight="700" font-family="Montserrat">42%</text>
+              </svg>
+              <div style="margin-top:6px; font-size:9px; letter-spacing:0.12em; color:var(--dim); font-weight:600">GIRO DO ESTOQUE</div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">META DO TRIMESTRE</div>
+            <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(19px,1.8vw,24px); white-space:nowrap; font-variant-numeric:tabular-nums">R$ 540.000</div>
+            <div style="margin-top:4px; font-size:11px; color:var(--dim)">R$ 331.200 realizados, 61%</div>
+            <div style="margin-top:12px; display:flex; gap:8px">
+              <span style="width:10px; height:10px; border-radius:99px; background:var(--accent)"></span>
+              <span style="width:10px; height:10px; border-radius:99px; background:var(--accent)"></span>
+              <span style="width:10px; height:10px; border-radius:99px; background:var(--accent)"></span>
+              <span style="width:10px; height:10px; border-radius:99px; background:rgba(255,255,255,0.12)"></span>
+              <span style="width:10px; height:10px; border-radius:99px; background:rgba(255,255,255,0.12)"></span>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">O QUE PRECISA DE VOCÊ</div>
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; gap:10px; align-items:flex-start">
+                <span style="width:7px; height:7px; border-radius:99px; background:#EAB308; margin-top:4px; flex:0 0 auto"></span>
+                <div style="font-size:11.5px; line-height:1.45">Carrossel do Onix 2020 aguardando sua aprovação</div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start">
+                <span style="width:7px; height:7px; border-radius:99px; background:#E5484D; margin-top:4px; flex:0 0 auto"></span>
+                <div style="font-size:11.5px; line-height:1.45">2 boletos de fornecedor vencem em 3 dias</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">LEADS RECENTES</div>
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Marcos V., Onix 2020</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">14:52</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Juliana R., HB20 2022</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">13:10</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Pedro A., Compass 2021</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">11:38</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 2: MEU SITE ============ -->
+    <sc-if value="{{ sH2 }}">
+    <div data-screen-label="Hub: Meu site" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">PIERCAR.COM.BR</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Meu site</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">VISITAS, 7 DIAS</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">1.247</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">CLIQUES NO WHATSAPP</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">96</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">VEÍCULO MAIS VISTO</div>
+          <div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Onix 2020<br><span style="font-size:11px; color:var(--dim); font-weight:500">214 visitas</span></div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ÚLTIMA PUBLICAÇÃO</div>
+          <div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Hoje, 09:14<br><span style="font-size:11px; color:var(--dim); font-weight:500">estoque sincronizado</span></div>
+        </div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden">
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border)">
+          <span style="width:10px; height:10px; border-radius:99px; background:#E5484D"></span>
+          <span style="width:10px; height:10px; border-radius:99px; background:#EAB308"></span>
+          <span style="width:10px; height:10px; border-radius:99px; background:#22C55E"></span>
+          <div style="flex:1; margin:0 20px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:6px 16px; font-size:11px; color:var(--dim); text-align:center">piercar.com.br</div>
+          <span style="font-size:10px; color:var(--dim); font-weight:600; cursor:pointer">Abrir</span>
+        </div>
+        <div style="background:#0F0C0A; padding:0">
+          <div style="padding:36px 44px; border-bottom:1px solid var(--border)">
+            <div style="font-size:9px; letter-spacing:0.22em; color:var(--accent); font-weight:700">SEMINOVOS SELECIONADOS</div>
+            <div style="margin-top:10px; font-size:34px; font-weight:800; letter-spacing:-0.02em; line-height:1.1">Seu próximo carro,<br>revisado e com garantia</div>
+            <div style="margin-top:14px; display:flex; gap:10px">
+              <span style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:8px 20px; font-size:11px; font-weight:700">Ver estoque</span>
+              <span style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:8px 20px; font-size:11px; font-weight:600">Chamar no WhatsApp</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:22px 44px 30px">
+            <div style="border:1px solid var(--border); border-radius:14px; overflow:hidden">
+              <div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do veículo</div>
+              <div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">Onix 1.0 Turbo 2020</div><div style="font-size:10px; color:var(--accent); font-variant-numeric:tabular-nums; margin-top:2px">R$ 68.900</div></div>
+            </div>
+            <div style="border:1px solid var(--border); border-radius:14px; overflow:hidden">
+              <div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do veículo</div>
+              <div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">HB20 1.0 2022</div><div style="font-size:10px; color:var(--accent); font-variant-numeric:tabular-nums; margin-top:2px">R$ 74.500</div></div>
+            </div>
+            <div style="border:1px solid var(--border); border-radius:14px; overflow:hidden">
+              <div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do veículo</div>
+              <div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">Compass Sport 2021</div><div style="font-size:10px; color:var(--accent); font-variant-numeric:tabular-nums; margin-top:2px">R$ 129.900</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 3: INSTAGRAM ============ -->
+    <sc-if value="{{ sH3 }}">
+    <div data-screen-label="Hub: Instagram" style="max-width:1280px">
+      <div style="display:flex; align-items:center; gap:14px">
+        <div>
+          <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">GERADOR DE CONTEÚDO</div>
+          <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Instagram</h1>
+        </div>
+        <div style="flex:1"></div>
+        <span style="padding:6px 14px; border:1px solid #EAB308; color:#EAB308; border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">AGUARDANDO APROVAÇÃO</span>
+        <span style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:9px 20px; font-size:11px; font-weight:600; cursor:pointer">Pedir ajuste</span>
+        <span style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:9px 20px; font-size:11px; font-weight:700; cursor:pointer">Aprovar e agendar</span>
+      </div>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 20px"></div>
+      <div style="display:flex; gap:8px; margin-bottom:20px">
+        <span style="padding:7px 16px; border-radius:999px; background:var(--accent); color:#0A0C0A; font-size:10.5px; font-weight:700; cursor:pointer">Carrossel</span>
+        <span style="padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Post</span>
+        <span style="padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Story</span>
+        <span style="padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Agendados</span>
+        <span style="padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Modelos</span>
+        <span style="padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Métricas</span>
+      </div>
+      <div style="display:grid; grid-template-columns:380px 1fr; gap:18px; align-items:start">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; display:flex; flex-direction:column; min-height:560px">
+          <div style="display:flex; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border)">
+            <span style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">NOVA CONVERSA</span>
+            <div style="flex:1"></div>
+            <span style="font-size:10px; color:var(--dim); font-weight:600; cursor:pointer; margin-right:12px">Histórico</span>
+            <span style="font-size:10px; color:var(--accent); font-weight:700; cursor:pointer">Nova</span>
+          </div>
+          <div style="flex:1; padding:18px; display:flex; flex-direction:column; gap:14px">
+            <div style="align-self:flex-end; max-width:85%; background:var(--accent); color:#0A0C0A; border-radius:16px 16px 4px 16px; padding:10px 14px; font-size:12px; line-height:1.5">Cria o carrossel do Onix 2020 que entrou hoje</div>
+            <div style="align-self:flex-start; max-width:92%; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; flex-wrap:wrap; gap:6px">
+                <span style="border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:10px; color:var(--dim)"><span style="display:inline-block; width:5px; height:5px; border-radius:99px; background:var(--accent); margin-right:6px; vertical-align:middle"></span>Leu estoque.json, Onix 2020, 41.320 km</span>
+                <span style="border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:10px; color:var(--dim)"><span style="display:inline-block; width:5px; height:5px; border-radius:99px; background:var(--accent); margin-right:6px; vertical-align:middle"></span>Aplicou o modelo seminovo-destaque</span>
+              </div>
+              <div style="background:var(--bg); border:1px solid var(--border); border-radius:4px 16px 16px 16px; padding:12px 14px; font-size:12px; line-height:1.55">Carrossel de 5 slides pronto. Preço e parcela no slide 4, chamada pro WhatsApp no 5. A legenda usa o tom direto que funcionou no post do HB20.</div>
+            </div>
+            <div style="align-self:flex-end; max-width:85%; background:var(--accent); color:#0A0C0A; border-radius:16px 16px 4px 16px; padding:10px 14px; font-size:12px; line-height:1.5">Troca a capa: destaca "único dono" em vez do ano</div>
+            <div style="align-self:flex-start; max-width:92%; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; flex-wrap:wrap; gap:6px">
+                <span style="border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:10px; color:var(--dim)"><span style="display:inline-block; width:5px; height:5px; border-radius:99px; background:var(--accent); margin-right:6px; vertical-align:middle"></span>Regerou o slide 1</span>
+              </div>
+              <div style="background:var(--bg); border:1px solid var(--border); border-radius:4px 16px 16px 16px; padding:12px 14px; font-size:12px; line-height:1.55">Capa atualizada. "Único dono" virou o destaque, o ano desceu pra linha de apoio.</div>
+            </div>
+          </div>
+          <div style="padding:14px 18px; border-top:1px solid var(--border); display:flex; gap:8px; align-items:center">
+            <span style="border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:10px; color:var(--dim); flex:0 0 auto">Modelo</span>
+            <div style="flex:1; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:8px 16px; font-size:11px; color:var(--dim)">Descreva o ajuste ou peça outro post</div>
+            <div style="width:32px; height:32px; border-radius:99px; background:var(--accent); color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; cursor:pointer; flex:0 0 auto">&#8599;</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px; min-width:0">
+          <div style="display:flex; gap:14px; overflow-x:auto; padding-bottom:6px">
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:#151110; border:1px solid var(--border); padding:20px; display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden">
+              <div style="position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 8px, transparent 8px 16px)"></div>
+              <div style="position:relative">
+                <div style="font-size:8px; letter-spacing:0.2em; color:var(--accent); font-weight:700">ÚNICO DONO</div>
+                <div style="margin-top:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:26px; line-height:1.05">Onix 1.0<br>Turbo</div>
+                <div style="margin-top:6px; font-size:10px; color:var(--dim)">2020, 41.320 km</div>
+              </div>
+              <div style="position:absolute; top:12px; right:14px; font-size:9px; color:var(--dim); font-variant-numeric:tabular-nums">1/5</div>
+            </div>
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:#151110; border:1px solid var(--border); position:relative; overflow:hidden">
+              <div style="position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto lateral do veículo</div>
+              <div style="position:absolute; bottom:14px; left:14px; background:var(--accent); color:#0A0C0A; border-radius:999px; padding:4px 12px; font-size:9px; font-weight:800; letter-spacing:0.08em">REVISADO</div>
+              <div style="position:absolute; top:12px; right:14px; font-size:9px; color:var(--dim); font-variant-numeric:tabular-nums">2/5</div>
+            </div>
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:#151110; border:1px solid var(--border); padding:20px; position:relative">
+              <div style="font-size:8px; letter-spacing:0.2em; color:var(--accent); font-weight:700">FICHA</div>
+              <div style="margin-top:12px; display:flex; flex-direction:column; gap:9px; font-size:11px">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px"><span style="color:var(--dim)">Km</span><span style="font-variant-numeric:tabular-nums">41.320</span></div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px"><span style="color:var(--dim)">Ano</span><span style="font-variant-numeric:tabular-nums">2020</span></div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px"><span style="color:var(--dim)">Dono</span><span>Único</span></div>
+                <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Revisões</span><span>Concessionária</span></div>
+              </div>
+              <div style="position:absolute; top:12px; right:14px; font-size:9px; color:var(--dim); font-variant-numeric:tabular-nums">3/5</div>
+            </div>
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:var(--accent); color:#0A0C0A; padding:20px; display:flex; flex-direction:column; justify-content:center; position:relative">
+              <div style="font-size:8px; letter-spacing:0.2em; font-weight:800">À VISTA</div>
+              <div style="margin-top:4px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:32px; font-variant-numeric:tabular-nums">R$ 68.900</div>
+              <div style="margin-top:10px; font-size:11px; font-weight:600">ou 48x de R$ 1.890</div>
+              <div style="position:absolute; top:12px; right:14px; font-size:9px; opacity:0.6; font-variant-numeric:tabular-nums">4/5</div>
+            </div>
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:#151110; border:1px solid var(--border); padding:20px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; position:relative">
+              <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; line-height:1.2">Ele sai da loja<br>esta semana</div>
+              <div style="margin-top:14px; background:var(--accent); color:#0A0C0A; border-radius:999px; padding:8px 18px; font-size:10px; font-weight:800">Chama no WhatsApp</div>
+              <div style="position:absolute; top:12px; right:14px; font-size:9px; color:var(--dim); font-variant-numeric:tabular-nums">5/5</div>
+            </div>
+            <div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; border:1.5px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--dim); cursor:pointer">+ Slide</div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:16px">
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">RASTRO TÉCNICO</div>
+              <div style="margin-top:12px; display:flex; flex-direction:column; gap:9px; font-size:11px">
+                <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Modelo</span><span>Sonnet 4.5</span></div>
+                <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Formato</span><span style="font-variant-numeric:tabular-nums">1080 x 1080, 5 slides</span></div>
+                <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Render</span><span style="font-variant-numeric:tabular-nums">14s</span></div>
+                <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Tokens</span><span style="font-variant-numeric:tabular-nums">12,4k</span></div>
+              </div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px">
+              <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">LEGENDA GERADA</div>
+              <div style="margin-top:10px; font-size:12px; line-height:1.6">Onix 1.0 Turbo 2020, único dono e 41 mil km. Revisado, com garantia e pronto pra rodar. R$ 68.900 à vista ou 48x de R$ 1.890. Chama no WhatsApp que a gente separa ele pra você.</div>
+              <div style="margin-top:10px; font-size:11px; color:var(--accent)">#seminovos #onix #piercar #carrosbh</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 4: FINANCEIRO ============ -->
+    <sc-if value="{{ sH4 }}">
+    <div data-screen-label="Hub: Financeiro" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">JULHO DE 2026</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Financeiro</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:18px; margin-bottom:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px">
+          <div style="display:flex; align-items:center; justify-content:space-between">
+            <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">CAIXA E SOLVÊNCIA</div>
+            <span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">SOLVENTE</span>
+          </div>
+          <div style="margin-top:14px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(30px,3.2vw,44px); white-space:nowrap; font-variant-numeric:tabular-nums">R$ 42.300</div>
+          <div style="margin-top:6px; font-size:12px; color:var(--dim)">folga de caixa para os próximos 34 dias, contando tudo que vence</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">FLUXO DO MÊS</div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:11px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:11.5px; color:var(--dim)">Entrou</span><span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:19px; font-variant-numeric:tabular-nums">R$ 186.400</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:11.5px; color:var(--dim)">Saiu</span><span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:19px; font-variant-numeric:tabular-nums">R$ 121.700</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--border); padding-top:11px"><span style="font-size:11.5px; color:var(--dim)">Lucro</span><span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:19px; font-variant-numeric:tabular-nums; color:var(--accent)">R$ 64.700</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:7px; height:7px; border-radius:99px; background:#E5484D"></span><span style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">A RECEBER VENCIDO</span></div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:26px; font-variant-numeric:tabular-nums">R$ 8.450</div>
+          <div style="margin-top:4px; font-size:11px; color:var(--dim)">2 clientes, maior atraso de 12 dias</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:7px; height:7px; border-radius:99px; background:#EAB308"></span><span style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">A RECEBER NO PRAZO</span></div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:26px; font-variant-numeric:tabular-nums">R$ 23.900</div>
+          <div style="margin-top:4px; font-size:11px; color:var(--dim)">5 parcelas até 28/07</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:7px; height:7px; border-radius:99px; background:#E5484D"></span><span style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:600">IMPOSTOS VENCIDOS</span></div>
+          <div style="margin-top:10px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:26px; font-variant-numeric:tabular-nums">R$ 3.120</div>
+          <div style="margin-top:4px; font-size:11px; color:var(--dim)">FGTS de junho, multa correndo</div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:18px; margin-bottom:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ENTRADAS, SAÍDAS E LUCRO, 6 MESES</div>
+          <svg width="100%" height="170" viewBox="0 0 560 170" preserveAspectRatio="none" style="margin-top:14px; display:block">
+            <line x1="0" y1="42" x2="560" y2="42" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+            <line x1="0" y1="84" x2="560" y2="84" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+            <line x1="0" y1="126" x2="560" y2="126" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"></line>
+            <path d="M0,96 L112,78 L224,86 L336,60 L448,44 L552,22" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+            <path d="M0,120 L112,112 L224,118 L336,104 L448,100 L552,92" fill="none" stroke="#8A8F98" stroke-width="1.5"></path>
+            <path d="M0,148 L112,140 L224,144 L336,130 L448,120 L552,104" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-dasharray="5 4"></path>
+            <circle cx="552" cy="22" r="4" fill="var(--accent)"></circle>
+          </svg>
+          <div style="display:flex; gap:18px; margin-top:10px; font-size:10px; color:var(--dim)">
+            <span><span style="display:inline-block; width:14px; height:2px; background:var(--accent); vertical-align:middle; margin-right:6px"></span>Entradas</span>
+            <span><span style="display:inline-block; width:14px; height:2px; background:#8A8F98; vertical-align:middle; margin-right:6px"></span>Saídas</span>
+            <span><span style="display:inline-block; width:14px; height:2px; background:rgba(255,255,255,0.35); vertical-align:middle; margin-right:6px"></span>Lucro</span>
+          </div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">PARA ONDE VAI O DINHEIRO</div>
+          <div style="margin-top:16px; display:flex; flex-direction:column; gap:12px">
+            <sc-for list="{{ gastos }}" as="g" hint-placeholder-count="5">
+              <div style="display:grid; grid-template-columns:86px 1fr 40px; gap:10px; align-items:center">
+                <div style="font-size:11px; color:var(--dim)">{{ g.n }}</div>
+                <div style="height:7px; border-radius:99px; background:rgba(255,255,255,0.06)"><div style="height:7px; border-radius:99px; background:var(--accent); opacity: {{ g.op }}; width: {{ g.w }}"></div></div>
+                <div style="font-size:10.5px; font-variant-numeric:tabular-nums; text-align:right; color:var(--dim)">{{ g.p }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1.5fr; gap:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">TAREFAS</div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; gap:10px; align-items:flex-start"><span style="width:14px; height:14px; border:1.5px solid var(--border); border-radius:5px; margin-top:1px; flex:0 0 auto"></span><div style="font-size:11.5px; line-height:1.45">Pagar FGTS de junho, R$ 3.120, hoje</div></div>
+            <div style="display:flex; gap:10px; align-items:flex-start"><span style="width:14px; height:14px; border:1.5px solid var(--border); border-radius:5px; margin-top:1px; flex:0 0 auto"></span><div style="font-size:11.5px; line-height:1.45">Cobrar as 2 parcelas vencidas, R$ 8.450</div></div>
+            <div style="display:flex; gap:10px; align-items:flex-start"><span style="width:14px; height:14px; border:1.5px solid var(--accent); border-radius:5px; margin-top:1px; flex:0 0 auto; background:var(--accent)"></span><div style="font-size:11.5px; line-height:1.45; color:var(--dim); text-decoration:line-through">Enviar notas fiscais de julho pro contador</div></div>
+          </div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ÚLTIMOS LANÇAMENTOS</div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:11px">
+            <div style="display:grid; grid-template-columns:1fr auto auto; gap:14px; font-size:11.5px; align-items:baseline"><span>Venda, HB20 2022</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">16/07</span><span style="font-variant-numeric:tabular-nums; color:var(--accent)">+ R$ 74.500</span></div>
+            <div style="display:grid; grid-template-columns:1fr auto auto; gap:14px; font-size:11.5px; align-items:baseline"><span>Fornecedor TechParts</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">16/07</span><span style="font-variant-numeric:tabular-nums; color:var(--dim)">- R$ 4.180</span></div>
+            <div style="display:grid; grid-template-columns:1fr auto auto; gap:14px; font-size:11.5px; align-items:baseline"><span>Compra, Onix 2020</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">15/07</span><span style="font-variant-numeric:tabular-nums; color:var(--dim)">- R$ 54.200</span></div>
+            <div style="display:grid; grid-template-columns:1fr auto auto; gap:14px; font-size:11.5px; align-items:baseline"><span>Anúncios Meta, semana 28</span><span style="color:var(--dim); font-variant-numeric:tabular-nums">14/07</span><span style="font-variant-numeric:tabular-nums; color:var(--dim)">- R$ 1.260</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 5: AGENDA (réplica Alumis) ============ -->
+    <sc-if value="{{ sH5 }}">
+    <div data-screen-label="Hub: Agenda" style="max-width:1280px">
+      <div style="display:flex; align-items:center; gap:14px">
+        <div>
+          <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">GESTÃO PRO</div>
+          <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Agenda</h1>
+        </div>
+        <div style="flex:1"></div>
+        <span style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:8px 18px; font-size:11px; font-weight:600; cursor:pointer">Anotações</span>
+        <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px">
+          <span style="padding:5px 14px; border-radius:999px; background:var(--accent); color:#0A0C0A; font-size:10.5px; font-weight:700">Semana</span>
+          <span style="padding:5px 14px; border-radius:999px; color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Mês</span>
+          <span style="padding:5px 14px; border-radius:999px; color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Lista</span>
+        </div>
+        <span style="background:var(--accent); color:#0A0C0A; border-radius:999px; padding:8px 20px; font-size:11px; font-weight:700; cursor:pointer">+ Criar</span>
+      </div>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 18px"></div>
+      <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap">
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Visão geral</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Saúde financeira</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Funcionários</span>
+        <span style="padding:6px 14px; border-radius:999px; background:var(--accent); color:#0A0C0A; font-size:10.5px; font-weight:700; cursor:pointer">Agenda</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Metas</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Relatórios</span>
+        <span style="padding:6px 14px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer">Calculadoras</span>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px 18px; margin-bottom:18px; display:flex; gap:14px; align-items:center">
+        <div style="width:34px; height:34px; border-radius:12px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; font-weight:700; font-size:15px; color:var(--accent); flex:0 0 auto">A</div>
+        <div style="flex:1">
+          <div style="font-size:11px; font-weight:700">Assistente</div>
+          <div style="margin-top:2px; font-size:10.5px; color:var(--dim)">Agende compromissos com linguagem natural. Ex: "Reunião com vendas dia 5 às 17h" ou "Lembrar de pagar fornecedor dia 15"</div>
+        </div>
+        <div style="flex:1.2; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:9px 18px; font-size:11px; color:var(--dim)">Escreva o compromisso</div>
+        <div style="width:32px; height:32px; border-radius:99px; background:var(--accent); color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; cursor:pointer; flex:0 0 auto">&#8599;</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px">
+        <span style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums">12 jul a 18 jul de 2026</span>
+        <span style="border:1px solid var(--border); border-radius:999px; padding:4px 12px; font-size:10px; color:var(--dim); font-weight:600; cursor:pointer">Hoje</span>
+        <div style="flex:1"></div>
+        <span style="font-size:10px; color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-right:5px"></span>Tarefa</span>
+        <span style="font-size:10px; color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#B08CFF; margin-right:5px"></span>Marco</span>
+        <span style="font-size:10px; color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:var(--accent); margin-right:5px"></span>Evento</span>
+        <span style="font-size:10px; color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:#EAB308; margin-right:5px"></span>Vencimento</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 290px; gap:18px; align-items:start">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden">
+          <div style="display:grid; grid-template-columns:46px repeat(7,1fr); border-bottom:1px solid var(--border)">
+            <div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">DOM</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">12</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">SEG</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">13</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">TER</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">14</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">QUA</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">15</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">QUI</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">16</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:2px solid var(--accent)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--accent); font-weight:700">SEX</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; color:var(--accent)">17</div></div>
+            <div style="padding:12px 8px; text-align:center; border-left:1px solid var(--border)"><div style="font-size:8.5px; letter-spacing:0.12em; color:var(--dim); font-weight:600">SÁB</div><div style="font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px">18</div></div>
+          </div>
+          <div style="display:grid; grid-template-columns:46px repeat(7,1fr)">
+            <div style="display:flex; flex-direction:column; font-size:9px; color:var(--dim); font-variant-numeric:tabular-nums">
+              <div style="height:44px; padding:4px 6px 0; text-align:right">07h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">08h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">09h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">10h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">11h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">12h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">13h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">14h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">15h</div>
+              <div style="height:44px; padding:4px 6px 0; text-align:right">16h</div>
+            </div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"></div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"></div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"></div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"></div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)">
+              <div style="position:absolute; top:310px; left:4px; right:4px; border-left:3px solid #EAB308; background:rgba(234,179,8,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Pagamento fornecedor TechParts<div style="color:var(--dim); margin-top:1px">14:00</div></div>
+            </div>
+            <div style="position:relative; height:440px; border-left:2px solid var(--accent); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)">
+              <div style="position:absolute; top:2px; left:4px; right:4px; border-left:3px solid #5AA9F9; background:rgba(90,169,249,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Revisar relatório financeiro mensal<div style="color:var(--dim); margin-top:1px">07:00</div></div>
+              <div style="position:absolute; top:178px; left:4px; right:4px; border-left:3px solid var(--accent); background:rgba(255,255,255,0.05); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Reunião de alinhamento semanal<div style="color:var(--dim); margin-top:1px">11:00</div></div>
+            </div>
+            <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)">
+              <div style="position:absolute; top:2px; left:4px; right:4px; border-left:3px solid #B08CFF; background:rgba(176,140,255,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Entrega do planejamento Q2<div style="color:var(--dim); margin-top:1px">07:00</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:13px; font-weight:700">Resumo</div>
+          <div style="margin-top:16px">
+            <div style="font-size:9px; letter-spacing:0.16em; color:#E5484D; font-weight:700">ATRASADOS (2)</div>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Enviar notas fiscais pendentes</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Tarefa, 07:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#EAB308; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Pagamento FGTS atrasado</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Vencimento, 07:00</div></div></div>
+            </div>
+          </div>
+          <div style="margin-top:18px">
+            <div style="font-size:9px; letter-spacing:0.16em; color:var(--accent); font-weight:700">HOJE (3)</div>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Revisar relatório financeiro mensal</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Tarefa, 07:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:var(--accent); margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Reunião de alinhamento semanal</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Evento, 11:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#EAB308; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Pagamento fornecedor TechParts</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Vencimento, 14:00</div></div></div>
+            </div>
+          </div>
+          <div style="margin-top:18px">
+            <div style="font-size:9px; letter-spacing:0.16em; color:var(--dim); font-weight:700">PRÓXIMOS 7 DIAS (4)</div>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#B08CFF; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Entrega do planejamento Q2</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Marco, sáb 07:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:var(--accent); margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Onboarding, Lucas Ferreira</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">RH, seg 06:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Gerar relatório de fluxo de caixa</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Relatório, ter 05:00</div></div></div>
+              <div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:#5AA9F9; margin-top:5px; flex:0 0 auto"></span><div><div style="font-size:11px; font-weight:600">Atualizar metas de vendas no sistema</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">Tarefa, qua 08:00</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 6: CLAUDE ============ -->
+    <sc-if value="{{ sH6 }}">
+    <div data-screen-label="Hub: Claude" style="max-width:1180px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">ASSENTO TEAM, CONTA DA EM DIGITAL</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Claude</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">EXECUÇÕES NO MÊS</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">47</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">TOKENS NO CICLO</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">318,1k</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">USO DO TETO</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">12%</div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">SKILLS INSTALADAS</div>
+          <div style="margin-top:8px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:clamp(20px,2vw,28px); white-space:nowrap; font-variant-numeric:tabular-nums">6</div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:18px">
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">ÚLTIMAS EXECUÇÕES</div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+            <div style="display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:baseline; border-bottom:1px solid var(--border); padding-bottom:12px">
+              <span style="font-family:monospace; font-size:11.5px; color:var(--accent)">/carrossel</span>
+              <span style="font-size:11px; color:var(--dim)">Onix 2020, 5 slides, aguardando aprovação</span>
+              <span style="font-size:10.5px; font-variant-numeric:tabular-nums">12,4k</span>
+              <span style="font-size:10px; color:var(--dim); font-variant-numeric:tabular-nums">hoje 14:32</span>
+            </div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:baseline; border-bottom:1px solid var(--border); padding-bottom:12px">
+              <span style="font-family:monospace; font-size:11.5px; color:var(--accent)">/relatorio-ads</span>
+              <span style="font-size:11px; color:var(--dim)">semana 28, entregue no WhatsApp</span>
+              <span style="font-size:10.5px; font-variant-numeric:tabular-nums">8,1k</span>
+              <span style="font-size:10px; color:var(--dim); font-variant-numeric:tabular-nums">ontem 09:05</span>
+            </div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:baseline">
+              <span style="font-family:monospace; font-size:11.5px; color:var(--accent)">/seo</span>
+              <span style="font-size:11px; color:var(--dim)">3 páginas de veículo atualizadas</span>
+              <span style="font-size:10.5px; font-variant-numeric:tabular-nums">5,7k</span>
+              <span style="font-size:10px; color:var(--dim); font-variant-numeric:tabular-nums">14/07 16:40</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+          <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">CONTEXTO INSTALADO</div>
+          <div style="margin-top:6px; font-size:11px; color:var(--dim)">O que o Claude sabe sobre a PierCar</div>
+          <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:7px">
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">estoque.json</span>
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">tom-de-voz.md</span>
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">seminovo-destaque</span>
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">tabela-financiamento</span>
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">relatorio-ads</span>
+            <span style="border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim)">seo-veiculos</span>
+          </div>
+          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim)">Atualizado hoje às 09:14, junto com o estoque</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HUB 7: CONFIGURAÇÕES ============ -->
+    <sc-if value="{{ sH7 }}">
+    <div data-screen-label="Hub: Configurações" style="max-width:900px">
+      <div style="font-size:10px; letter-spacing:0.2em; color:var(--accent); font-weight:700">HUB DA PIERCAR</div>
+      <h1 style="margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-0.02em">Configurações</h1>
+      <div style="width:60px; height:2px; background:var(--accent); margin:14px 0 26px"></div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px; margin-bottom:18px">
+        <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">MÓDULOS</div>
+        <div style="margin-top:6px; font-size:11px; color:var(--dim)">Abas desligadas somem do hub. Dá pra religar aqui a qualquer momento.</div>
+        <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div style="border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px">
+            <div style="flex:1"><div style="font-size:12.5px; font-weight:700">Meu site</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">aba do site e métricas</div></div>
+            <div style="width:36px; height:20px; border-radius:999px; background:var(--accent); position:relative; cursor:pointer"><span style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:99px; background:#0A0C0A"></span></div>
+          </div>
+          <div style="border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px">
+            <div style="flex:1"><div style="font-size:12.5px; font-weight:700">Instagram</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">gerador de conteúdo e biblioteca</div></div>
+            <div style="width:36px; height:20px; border-radius:999px; background:var(--accent); position:relative; cursor:pointer"><span style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:99px; background:#0A0C0A"></span></div>
+          </div>
+          <div style="border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px">
+            <div style="flex:1"><div style="font-size:12.5px; font-weight:700">Financeiro</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">painel de caixa e faturas</div></div>
+            <div style="width:36px; height:20px; border-radius:999px; background:var(--accent); position:relative; cursor:pointer"><span style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:99px; background:#0A0C0A"></span></div>
+          </div>
+          <div style="border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px">
+            <div style="flex:1"><div style="font-size:12.5px; font-weight:700; color:var(--dim)">CRM</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">funil de vendas e WhatsApp</div></div>
+            <div style="width:36px; height:20px; border-radius:999px; background:rgba(255,255,255,0.12); position:relative; cursor:pointer"><span style="position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:99px; background:#F4F6F3"></span></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px">
+        <div style="font-size:9px; letter-spacing:0.18em; color:var(--dim); font-weight:600">INTEGRAÇÕES</div>
+        <div style="margin-top:16px; display:flex; flex-direction:column; gap:12px">
+          <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px">
+            <div style="flex:1"><div style="font-size:12px; font-weight:600">Instagram API</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">@piercar.multimarcas, 4.312 seguidores</div></div>
+            <span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">CONECTADA</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px">
+            <div style="flex:1"><div style="font-size:12px; font-weight:600">WhatsApp Business</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">recebe leads e relatórios</div></div>
+            <span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:0.14em; font-weight:700">CONECTADA</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="flex:1"><div style="font-size:12px; font-weight:600">Google Analytics</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">métricas do piercar.com.br</div></div>
+            <span style="border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:6px 16px; font-size:10px; font-weight:600; cursor:pointer">Conectar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;modoInicial&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;console&quot;, &quot;options&quot;: [&quot;console&quot;, &quot;hub&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Modo&quot;}, &quot;corCliente&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#FF7A29&quot;, &quot;options&quot;: [&quot;#FF7A29&quot;, &quot;#E8590C&quot;, &quot;#FFB25C&quot;, &quot;#C9CDD3&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Marca do cliente&quot;}}">
+class Component extends DCLogic {
+  state = { mode: this.props.modoInicial ?? 'console', screen: null };
+  hexToRgba(hex, a) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  renderVals() {
+    const mode = this.state.mode;
+    const isConsole = mode === 'console';
+    const screen = this.state.screen || (isConsole ? 'c1' : 'h1');
+    const cor = this.props.corCliente ?? '#FF7A29';
+    const go = (id) => () => this.setState({ screen: id });
+    const item = (id, l) => ({
+      l, go: go(id),
+      c: screen === id ? 'var(--accent)' : 'var(--dim)',
+      bc: screen === id ? 'var(--accent)' : 'transparent',
+      w: screen === id ? 700 : 500
+    });
+    const navGroups = isConsole ? [
+      { t: 'OPERAÇÃO', items: [item('c1', 'Visão geral'), item('c2', 'Clientes')] },
+      { t: 'PLATAFORMA', items: [item('c3', 'Contas Claude'), item('c4', 'Assentos Claude'), item('c5', 'Tokens')] }
+    ] : [
+      { t: 'NEGÓCIO', items: [item('h1', 'Visão geral'), item('h2', 'Meu site'), item('h3', 'Instagram')] },
+      { t: 'GESTÃO', items: [item('h4', 'Financeiro'), item('h5', 'Agenda')] },
+      { t: 'SISTEMA', items: [item('h6', 'Claude'), item('h7', 'Configurações')] }
+    ];
+    const modeVars = isConsole ? '' :
+      '--accent:' + cor + '; --bg:#0C0A09; --card:#151110; --card2:#181310; --dim:#B3ACA5; --glow:' + this.hexToRgba(cor, 0.10) + ';';
+    const clientes = [
+      { nome: 'PierCar Multimarcas', slug: 'piercar', ini: 'PC', cor: '#FF7A29', modulos: ['Site', 'Instagram', 'Financeiro'], conexao: 'Assento Team', custo: 'R$ 276/mês', uso: '12%', usoPct: '12%', usoCor: 'var(--accent)', status: 'ATIVO', stCor: 'var(--accent)' },
+      { nome: 'Ariza', slug: 'ariza', ini: 'AR', cor: '#5AA9F9', modulos: ['Site', 'Instagram'], conexao: 'API Sonnet', custo: 'R$ 74/mês', uso: '84%', usoPct: '84%', usoCor: '#E5484D', status: 'NO TETO', stCor: '#E5484D' },
+      { nome: 'Odonto Max', slug: 'odonto-max', ini: 'OM', cor: '#22C55E', modulos: ['Site'], conexao: 'API Haiku', custo: 'R$ 21/mês', uso: '6%', usoPct: '6%', usoCor: 'var(--accent)', status: 'ATIVO', stCor: 'var(--accent)' },
+      { nome: 'Domínio 3 Dimensões', slug: 'dominio-3d', ini: 'D3', cor: '#B08CFF', modulos: ['Site', 'Financeiro'], conexao: 'API Sonnet', custo: 'R$ 31/mês', uso: '18%', usoPct: '18%', usoCor: 'var(--accent)', status: 'ATIVO', stCor: 'var(--accent)' },
+      { nome: 'Tuba Lyra', slug: 'tuba-lyra', ini: 'TL', cor: '#EAB308', modulos: ['Instagram'], conexao: 'API Haiku', custo: 'R$ 29/mês', uso: '31%', usoPct: '31%', usoCor: 'var(--accent)', status: 'ATIVO', stCor: 'var(--accent)' },
+      { nome: 'Nova Ótica', slug: 'nova-otica', ini: 'NO', cor: '#9CA3AF', modulos: [], conexao: 'Não conectado', custo: 'R$ 0/mês', uso: '0%', usoPct: '0%', usoCor: 'var(--accent)', status: 'CONFIGURANDO', stCor: '#8A8F98' }
+    ];
+    const consumo = [
+      { nome: 'PierCar Multimarcas', cor: '#FF7A29', pct: '100%', val: '318,1k' },
+      { nome: 'Ariza', cor: '#5AA9F9', pct: '13%', val: '41,9k' },
+      { nome: 'Tuba Lyra', cor: '#EAB308', pct: '4.5%', val: '14,3k' },
+      { nome: 'Domínio 3 Dimensões', cor: '#B08CFF', pct: '0.2%', val: '0,4k' },
+      { nome: 'Odonto Max', cor: '#22C55E', pct: '0.1%', val: '0' }
+    ];
+    const spark = (pts) => {
+      const linha = 'M' + pts.map((y, i) => (i * (260 / (pts.length - 1))).toFixed(0) + ',' + y).join(' L');
+      return { linha, area: linha + ' L260,54 L0,54 Z' };
+    };
+    const s1 = spark([46, 44, 40, 36, 30, 22, 14, 8]);
+    const s2 = spark([48, 46, 47, 42, 40, 38, 34, 30]);
+    const s3 = spark([50, 50, 49, 49, 48, 48, 47, 47]);
+    const s4 = spark([50, 49, 48, 48, 46, 45, 44, 42]);
+    const s5 = spark([49, 47, 46, 44, 43, 41, 40, 38]);
+    const tokens = [
+      { nome: 'PierCar Multimarcas', ini: 'PC', cor: '#FF7A29', chat: '8,7k', gerador: '83,4k', haiku: '0', opus: '225,9k', usado: '318,1k', teto: '380k', limPct: '84%', linha: s1.linha, area: s1.area },
+      { nome: 'Ariza', ini: 'AR', cor: '#5AA9F9', chat: '11,2k', gerador: '30,7k', haiku: '0', opus: '0', usado: '41,9k', teto: '50k', limPct: '84%', linha: s2.linha, area: s2.area },
+      { nome: 'Tuba Lyra', ini: 'TL', cor: '#EAB308', chat: '989', gerador: '13,3k', haiku: '0', opus: '0', usado: '14,3k', teto: 'sem teto', limPct: '20%', linha: s5.linha, area: s5.area },
+      { nome: 'Domínio 3 Dimensões', ini: 'D3', cor: '#B08CFF', chat: '412', gerador: '0', haiku: '0', opus: '0', usado: '0,4k', teto: 'sem teto', limPct: '10%', linha: s4.linha, area: s4.area },
+      { nome: 'Odonto Max', ini: 'OM', cor: '#22C55E', chat: '0', gerador: '0', haiku: '0', opus: '0', usado: '0', teto: 'sem teto', limPct: '5%', linha: s3.linha, area: s3.area }
+    ];
+    const gastos = [
+      { n: 'Estoque', w: '100%', p: '46%', op: 1 },
+      { n: 'Folha', w: '48%', p: '22%', op: 0.8 },
+      { n: 'Marketing', w: '26%', p: '12%', op: 0.65 },
+      { n: 'Impostos', w: '24%', p: '11%', op: 0.5 },
+      { n: 'Outros', w: '20%', p: '9%', op: 0.35 }
+    ];
+    return {
+      isConsole, isHub: !isConsole, modeVars, navGroups, clientes, consumo, tokens, gastos,
+      sC1: screen === 'c1', sC2: screen === 'c2', sC3: screen === 'c3', sC4: screen === 'c4', sC5: screen === 'c5',
+      sH1: screen === 'h1', sH2: screen === 'h2', sH3: screen === 'h3', sH4: screen === 'h4', sH5: screen === 'h5', sH6: screen === 'h6', sH7: screen === 'h7',
+      goConsole: () => this.setState({ mode: 'console', screen: 'c1' }),
+      goHub: () => this.setState({ mode: 'hub', screen: 'h1' }),
+      swCBg: isConsole ? 'var(--accent)' : 'transparent',
+      swCFg: isConsole ? '#0A0C0A' : 'var(--dim)',
+      swHBg: isConsole ? 'transparent' : 'var(--accent)',
+      swHFg: isConsole ? 'var(--dim)' : '#0A0C0A',
+      userName: isConsole ? 'Erick Sander' : 'Paulo Cintra',
+      userInitials: isConsole ? 'ES' : 'PC',
+      userRole: isConsole ? 'Owner, EM Digital' : 'Proprietário',
+      topLabel: isConsole ? 'CONSOLE OWNER' : 'HUB DO CLIENTE',
+      topBadge: isConsole ? '6 CLIENTES' : 'PLANO COMPLETO',
+      metaLabel: isConsole ? 'META DO MÊS' : 'META DO TRIMESTRE',
+      metaValor: isConsole ? 'R$ 1.500 de R$ 2.000' : 'R$ 331.200 de R$ 540.000',
+      metaPct: isConsole ? '75%' : '61%',
+      metaSub: isConsole ? 'faltam 2 hubs para a meta' : 'faltam R$ 208.800'
+    };
+  }
+}
+</script>
+</body>
+</html>
