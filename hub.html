@@ -599,7 +599,7 @@ function wireConv(){ const w=$('walist'); if(!w)return;
 
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-nav]'); if(nav){ S.screen=nav.dataset.nav; render(); return; }
-  const md=e.target.closest('[data-mode]'); if(md){ S.mode=md.dataset.mode; S.screen=S.mode==='console'?'c1':'h1'; render(); return; }
+  const md=e.target.closest('.modesw [data-mode]'); if(md){ S.mode=md.dataset.mode; S.screen=S.mode==='console'?'c1':'h1'; render(); return; }
   const ig=e.target.closest('[data-ig]'); if(ig){ S.ig=ig.dataset.ig; renderScreen(); return; }
   const cr=e.target.closest('[data-crm]'); if(cr){ S.crm=cr.dataset.crm; renderScreen(); return; }
   const fin=e.target.closest('[data-fin]'); if(fin){ window.location.href='financeiro.html'; return; }
