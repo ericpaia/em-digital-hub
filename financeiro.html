@@ -297,6 +297,7 @@
   .mbody p { margin:0 0 12px; } .mbody p:last-child { margin:0; }
   .mfoot { padding:14px 20px; border-top:1px solid var(--line2); display:flex; justify-content:flex-end; gap:8px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -580,6 +581,15 @@
   const brl = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const ANIM = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+  /* ── supabase / dados reais ── */
+  const SB_URL='https://lmavwyvyrmsadnpgozrq.supabase.co';
+  const SB_KEY='sb_publishable_i-H1zzoou38HJmBhBfcanQ_cUVJdqOm';
+  const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+  let WS=null, FIN_ENTRIES=[];
+  const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const finDate = d => { if(!d) return ''; const p=String(d).slice(0,10).split('-'); return p.length===3?p[2]+'/'+p[1]:String(d); };
+  if(document.body) document.body.style.opacity='0';
+
   /* ── toast + modal ── */
   function toast(msg) {
     const t = document.createElement('div');
@@ -661,7 +671,7 @@
     const seg = e.target.closest('.segbtn button'); if (seg) { const grp=seg.parentElement; grp.querySelectorAll('button').forEach(b=>b.classList.remove('on')); seg.classList.add('on'); const per=grp.dataset.period; if(per==='fin') applyPeriodFin(seg.textContent.trim()); else if(per==='func') applyPeriodFunc(seg.textContent.trim()); return; }
     const tut_ = e.target.closest('[data-tut]'); if (tut_) return tut(tut_.dataset.tut);
     const frm = e.target.closest('[data-form]'); if (frm) return form(frm.dataset.form);
-    const sv = e.target.closest('[data-msave]'); if (sv) { closeModal(); toast(sv.dataset.msave + ' salvo'); return; }
+    const sv = e.target.closest('[data-msave]'); if (sv) { if(sv.dataset.msave==='Adicionar lançamento'){ saveFinEntry(); } else { closeModal(); toast(sv.dataset.msave + ' salvo'); } return; }
     const tok = e.target.closest('[data-token]'); if (tok) { $('tokenBody').innerHTML = `<tr><td><b>Conexão principal</b></td><td><span class="pill grn dot">Ativo</span></td><td class="num">17/08/2026</td><td>agora</td><td><span class="pill mu" style="cursor:pointer">Revogar</span></td></tr>`; toast('Token do hub gerado'); return; }
     const tg = e.target.closest('[data-toggle]'); if (tg) { tg.classList.toggle('on'); return; }
     const rd = e.target.closest('.task .rd'); if (rd) { rd.classList.toggle('done'); rd.innerHTML = rd.classList.contains('done')?ico('check','xs'):''; return; }
@@ -934,7 +944,61 @@
   const FUNC_P={'Mensal':['28','2','R$ 410.806,00','R$ 810.400,00','R$ 0,00','R$ 14.672,00','R$ 0,00','0,0%'],'Trimestral':['28','3','R$ 1.232.418,00','R$ 2.431.200,00','R$ 0,00','R$ 44.015,00','R$ 0,00','+2,4%'],'Anual':['28','6','R$ 4.929.672,00','R$ 9.724.800,00','R$ 0,00','R$ 176.060,00','R$ 0,00','+8,1%']};
   function applyPeriodFunc(label){ const p=FUNC_P[label]||FUNC_P['Mensal']; $('funcKpis').innerHTML=FUNC_KPI.map((k,i)=>K(k[0],k[1],p[i],'',i===7?'grn':'')).join(''); }
 
-  renderNav();
+  /* ── dados reais do workspace (Supabase) ── */
+  function realEntries(kind){ return FIN_ENTRIES.filter(e=>e.kind===kind); }
+  function finEmptyRow(cols){ return `<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:22px">Sem lançamentos ainda</td></tr>`; }
+  function renderFinReal(){
+    const inArr=realEntries('in'), outArr=realEntries('out');
+    const inSum=inArr.reduce((a,e)=>a+e.amount,0), outSum=outArr.reduce((a,e)=>a+e.amount,0);
+    const res=inSum-outSum, marg=inSum?((res/inSum)*100).toFixed(1).replace('.',',')+'%':'0%';
+    const k=$('finKpis');
+    if(k) k.innerHTML=[K('Entradas','trend',brl(inSum),inArr.length+' registro(s)','grn'),K('Saídas','down',brl(outSum),outArr.length+' registro(s)','amb'),K('Resultado','dollar',brl(res),'',res>=0?'grn':'red'),K('Margem','chart',marg,''),K('A Receber','dollar','R$ 193.500,00','2 vencida(s)','','red'),K('A Pagar','dollar','R$ 63.900,00','1 vencida(s)','','red'),K('MRR','trend','R$ 15.400,00','6 ativa(s)'),K('Folha','users','R$ 410.806,00','28 func.')].join('');
+    FIN_P['Geral'].v[0]=brl(inSum); FIN_P['Geral'].v[1]=brl(outSum); FIN_P['Geral'].v[2]=brl(res); FIN_P['Geral'].v[3]=marg;
+    FIN_P['Geral'].s[0]=inArr.length+' registro(s)'; FIN_P['Geral'].s[1]=outArr.length+' registro(s)';
+    LAZY_PANEL['fin-entradas']=()=>txTable([['Data'],['Descrição'],['Categoria'],['Valor','r']],
+      realEntries('in').map(e=>`<tr><td class="num">${finDate(e.entry_date)}</td><td><b>${esc(e.description)}</b></td><td><span class="pill mu">${esc(e.category||'—')}</span></td><td class="r" style="color:var(--grn);font-weight:600">+ ${brl(e.amount)}</td></tr>`).join('')||finEmptyRow(4));
+    LAZY_PANEL['fin-saidas']=()=>txTable([['Data'],['Descrição'],['Categoria'],['Valor','r']],
+      realEntries('out').map(e=>`<tr><td class="num">${finDate(e.entry_date)}</td><td><b>${esc(e.description)}</b></td><td><span class="pill mu">${esc(e.category||'—')}</span></td><td class="r" style="color:var(--red);font-weight:600">− ${brl(e.amount)}</td></tr>`).join('')||finEmptyRow(4));
+    ['fin-entradas','fin-saidas'].forEach(p=>{ rendered.delete(p); const el=document.querySelector(`.tabpanel[data-panel="${p}"]`); if(el && !el.hidden){ el.innerHTML=LAZY_PANEL[p](); rendered.add(p); } });
+  }
+  async function saveFinEntry(){
+    if(!sb||!WS){ toast('Sem conexão com o workspace'); return; }
+    const ins=[...$('mBody').querySelectorAll('.in')];
+    const desc=String(ins[0]&&ins[0].value||'').trim();
+    const tipo=(ins[1]&&ins[1].value)||'Entrada';
+    const val=parseFloat(String(ins[2]&&ins[2].value||'0').replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'))||0;
+    const date=(ins[3]&&ins[3].value)||'';
+    if(!desc||!val){ toast('Preencha descrição e valor'); return; }
+    const row={ workspace_id:WS.id, kind: tipo==='Saída'?'out':'in', description:desc, category:'Geral', amount:val };
+    if(date) row.entry_date=date;
+    const { data, error } = await sb.from('fin_entries').insert(row).select().single();
+    if(error){ toast('Erro ao salvar lançamento'); return; }
+    FIN_ENTRIES.unshift({...data, amount:Number(data.amount)});
+    closeModal(); renderFinReal();
+    toast('Lançamento adicionado');
+  }
+  async function boot(){
+    renderNav();
+    try{
+      if(!sb){ return; }
+      const { data:{ session } } = await sb.auth.getSession();
+      if(!session){ location.replace('hub.html'); return; }
+      const wsId=localStorage.getItem('emhub_ws');
+      let q=sb.from('workspaces').select('*');
+      q = wsId ? q.eq('id',wsId) : q.eq('kind','agency');
+      const { data:wss } = await q.limit(1);
+      WS=(wss&&wss[0])||null;
+      if(WS){
+        const nm=document.querySelector('.proj .tx s'); if(nm) nm.textContent=WS.name;
+        const h=document.querySelector('#v-visao h1'); if(h) h.textContent=WS.name;
+        const { data:fe } = await sb.from('fin_entries').select('*').eq('workspace_id',WS.id).order('entry_date',{ascending:false});
+        FIN_ENTRIES=(fe||[]).map(e=>({...e, amount:Number(e.amount)}));
+        renderFinReal();
+      }
+    }catch(err){ /* mantém o mock se algo falhar */ }
+    finally{ if(document.body) document.body.style.opacity='1'; }
+  }
+  boot();
 </script>
 </body>
 </html>

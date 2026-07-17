@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root { --accent:#22E07C; --bg:#0A0C0A; --card:#111411; --card2:#151915; --border:rgba(255,255,255,0.07); --ink:#F4F6F3; --dim:#A8B0AA; --glow:rgba(34,224,124,0.09); }
   [data-mode="hub"] { --accent:#FF7A29; --bg:#0C0A09; --card:#151110; --card2:#181310; --dim:#B3ACA5; --glow:rgba(255,122,41,0.10); }
@@ -141,6 +142,20 @@
 
   .fadein { animation:fade .35s ease; }
   @keyframes fade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  /* login */
+  .loginwrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:var(--bg); z-index:200; padding:20px; }
+  .loginbox { width:340px; max-width:100%; background:var(--card); border:1px solid var(--border); border-radius:20px; padding:30px 26px; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .lin { width:100%; box-sizing:border-box; margin-bottom:12px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:12px 14px; color:var(--ink); font:500 13px 'Montserrat'; }
+  .lin:focus { outline:none; border-color:var(--accent); }
+  /* workspace picker */
+  .wspick { margin:0 18px 14px; }
+  .wspick label { display:block; font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600; margin-bottom:6px; }
+  .wspick select { width:100%; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--ink); font:600 12px 'Montserrat'; cursor:pointer; }
+  .wspick select:focus { outline:none; border-color:var(--accent); }
+  /* logout */
+  .logout { margin:12px 18px 0; padding:9px 12px; text-align:center; font-size:11px; color:var(--dim); border:1px solid var(--border); border-radius:12px; cursor:pointer; }
+  .logout:hover { color:var(--ink); border-color:var(--accent); }
 </style>
 </head>
 <body data-mode="console">
@@ -159,7 +174,20 @@ const $ = id => document.getElementById(id);
 function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; $('toasts').appendChild(t); setTimeout(()=>{t.style.opacity=0;t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2200); }
 
 /* ---------- state ---------- */
-const S = { mode:'console', screen:'c1', ig:'carrossel', crm:'funil' };
+const S = { mode:'console', screen:'c1', ig:'perfil', crm:'funil', wsId:null, user:null };
+
+/* ---------- supabase ---------- */
+const SB_URL = 'https://lmavwyvyrmsadnpgozrq.supabase.co';
+const SB_KEY = 'sb_publishable_i-H1zzoou38HJmBhBfcanQ_cUVJdqOm';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+let WORKSPACES = [];
+function activeWs(){ return WORKSPACES.find(w=>w.id===S.wsId) || null; }
+function initials(n){ return (n||'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+const LEAD_COLORS=['#6366F1','#DB2777','#4F46E5','#2563EB','#16A34A','#EA580C','#D97706','#DC2626','#7C3AED','#0891B2','#059669','#9333EA'];
+function leadColor(s){ let h=0; for(const ch of (s||'?')) h=(h*31+ch.charCodeAt(0))>>>0; return LEAD_COLORS[h%LEAD_COLORS.length]; }
+function timeAgo(iso){ if(!iso) return ''; const d=(Date.now()-new Date(iso).getTime())/1000; if(d<3600) return Math.max(1,Math.floor(d/60))+' min'; if(d<86400) return Math.floor(d/3600)+' h'; return Math.floor(d/86400)+' d'; }
+function mapLead(r){ return {id:r.id, n:r.name, car:r.interest||'', v:Number(r.value)||0, src:r.source||'', stage:r.stage||0, c:leadColor(r.name), t:timeAgo(r.created_at)}; }
+function meLabel(){ const e=S.user&&S.user.email; if(!e) return {b:LABELS.console.user,s:LABELS.console.role,ini:LABELS.console.ini}; const name=e.split('@')[0]; return {b:name, s:e, ini:initials(name.replace(/[._-]/g,' '))||name.slice(0,2).toUpperCase()}; }
 
 /* ---------- data ---------- */
 const CLIENTES=[
@@ -199,19 +227,33 @@ const LABELS = {
 
 /* ---------- shell ---------- */
 function renderShell(){
-  const L=LABELS[S.mode];
-  $('side').innerHTML =
-    (S.mode==='console'
-      ? `<div class="brand"><span style="color:var(--accent)">EM</span>&nbsp;<span>Digital</span></div>`
-      : `<div class="brand"><span class="pc">PC</span><span>PierCar<br><small>Multimarcas</small></span></div>`)
-    + `<div class="whoami"><span class="av">${L.ini}</span><span><b>${L.user}</b><s>${L.role}</s></span></div>`
-    + `<div class="live"><span class="d"></span> Operacional, sem alertas</div>`
-    + `<div class="navwrap">${NAV[S.mode].map(g=>`<div class="navgroup"><div class="gt">${g.t}</div>${g.items.map(([id,l])=>`<div class="navitem ${S.screen===id?'on':''}" data-nav="${id}">${l}</div>`).join('')}</div>`).join('')}</div>`
-    + `<div class="metacard"><div class="l">${L.ml}</div><div class="v">${L.mv}</div><div class="bar"><i style="width:${L.mp}"></i></div><div class="s">${L.ms}</div></div>`
-    + (S.mode==='hub'?`<div class="opby">Operado por <span class="g">EM</span> Digital</div>`:'');
-  $('top').innerHTML =
-    `<div class="modesw"><div class="consw ${S.mode==='console'?'on':''}" data-mode="console">Console EM Digital</div><div class="${S.mode==='hub'?'on':''}" data-mode="hub">Hub: PierCar</div></div>`
-    + `<div style="flex:1"></div><div class="toplabel">${L.top}</div><div class="topbadge">${L.badge}</div>`;
+  const me=meLabel(), ws=activeWs();
+  const navHtml=`<div class="navwrap">${NAV[S.mode].map(g=>`<div class="navgroup"><div class="gt">${g.t}</div>${g.items.map(([id,l])=>`<div class="navitem ${S.screen===id?'on':''}" data-nav="${id}">${l}</div>`).join('')}</div>`).join('')}</div>`;
+  if(S.mode==='console'){
+    const L=LABELS.console, clientes=WORKSPACES.filter(w=>w.kind==='client').length;
+    $('side').innerHTML =
+      `<div class="brand"><span style="color:var(--accent)">EM</span>&nbsp;<span>Digital</span></div>`
+      + `<div class="whoami"><span class="av">${me.ini}</span><span><b>${me.b}</b><s>${me.s}</s></span></div>`
+      + `<div class="live"><span class="d"></span> Operacional, sem alertas</div>`
+      + navHtml
+      + `<div class="metacard"><div class="l">${L.ml}</div><div class="v">${L.mv}</div><div class="bar"><i style="width:${L.mp}"></i></div><div class="s">${L.ms}</div></div>`
+      + `<div class="logout" data-logout>Sair da conta</div>`;
+    $('top').innerHTML = modeSwitch()
+      + `<div style="flex:1"></div><div class="toplabel">${L.top}</div><div class="topbadge">${clientes?clientes+' CLIENTES':L.badge}</div>`;
+  } else {
+    const name=ws?ws.name:'Cliente', ini=ws?initials(ws.name):'--', L=LABELS.hub;
+    $('side').innerHTML =
+      `<div class="brand"><span class="pc">${ini}</span><span>${name}</span></div>`
+      + `<div class="whoami"><span class="av">${me.ini}</span><span><b>${me.b}</b><s>operando o hub</s></span></div>`
+      + `<div class="live"><span class="d"></span> Operacional, sem alertas</div>`
+      + wsPicker()
+      + navHtml
+      + `<div class="metacard"><div class="l">${L.ml}</div><div class="v">${L.mv}</div><div class="bar"><i style="width:${L.mp}"></i></div><div class="s">${L.ms}</div></div>`
+      + `<div class="opby">Operado por <span class="g">EM</span> Digital</div>`
+      + `<div class="logout" data-logout>Sair da conta</div>`;
+    $('top').innerHTML = modeSwitch()
+      + `<div style="flex:1"></div><div class="toplabel">HUB DO CLIENTE</div><div class="topbadge">${ws&&ws.plan?ws.plan.toUpperCase():'PRÉVIA'}</div>`;
+  }
 }
 
 /* ---------- helpers ---------- */
@@ -357,9 +399,10 @@ function h2(){ return head('PIERCAR.COM.BR','Meu site')+`
   </div>`; }
 
 /* --- Instagram with working tabs --- */
-const IG_TABS=[['carrossel','Carrossel'],['post','Post'],['story','Story'],['agendados','Agendados'],['modelos','Modelos'],['metricas','Métricas']];
+const IG_TABS=[['perfil','Perfil'],['carrossel','Carrossel'],['post','Post'],['story','Story'],['agendados','Agendados'],['modelos','Modelos'],['metricas','Métricas']];
 function h3(){
-  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">GERADOR DE CONTEÚDO</div><h1>Instagram</h1></div><div style="flex:1"></div>${S.ig==='carrossel'?`<span style="padding:6px 14px; border:1px solid #EAB308; color:#EAB308; border-radius:999px; font-size:8.5px; letter-spacing:.14em; font-weight:700">AGUARDANDO APROVAÇÃO</span><button class="obtn" data-toast="Ajuste solicitado">Pedir ajuste</button><button class="kbtn" data-toast="Carrossel aprovado e agendado">Aprovar e agendar</button>`:''}</div>
+  const ws=activeWs(), ig=ws&&ws.instagram;
+  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">GERADOR DE CONTEÚDO</div><h1>Instagram</h1></div><div style="flex:1"></div><button class="obtn" data-igprofile>${ig?'@'+ig+' ↗':'Conectar perfil'}</button>${S.ig==='carrossel'?`<span style="padding:6px 14px; border:1px solid #EAB308; color:#EAB308; border-radius:999px; font-size:8.5px; letter-spacing:.14em; font-weight:700">AGUARDANDO APROVAÇÃO</span><button class="obtn" data-toast="Ajuste solicitado">Pedir ajuste</button><button class="kbtn" data-toast="Carrossel aprovado e agendado">Aprovar e agendar</button>`:''}</div>
   <div class="divider"></div>
   <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap">${IG_TABS.map(([id,l])=>`<button class="pill ${S.ig===id?'on':''}" data-ig="${id}">${l}</button>`).join('')}</div>
   <div class="fadein">${igPanel()}</div>`;
@@ -369,6 +412,7 @@ function igPanel(){
   if(S.ig==='metricas') return igMetricas();
   if(S.ig==='modelos') return igModelos();
   if(S.ig==='agendados') return igAgendados();
+  if(S.ig==='perfil') return igPerfil();
   const t=S.ig==='post'?'post':'story', d=S.ig==='post'?'1080 x 1080':'1080 x 1920';
   return `<div class="card" style="max-width:1280px; display:grid; place-items:center; min-height:320px; text-align:center"><div style="max-width:40ch"><div style="font-size:14px; font-weight:800; text-transform:capitalize">Criar ${t}</div><div style="margin-top:6px; font-size:12px; color:var(--dim)">Descreva o que quer publicar. O Claude monta no formato ${d} e você aprova.</div><button class="kbtn" style="margin-top:16px" data-toast="Escolha um modelo">Escolher modelo</button></div></div>`;
 }
@@ -406,6 +450,29 @@ function igMetricas(){ return `<div class="grid" style="grid-template-columns:re
 function igModelos(){ return `<div class="card" style="max-width:1180px"><div class="lbl">MODELOS IMPLANTADOS</div><div style="margin-top:6px; font-size:11px; color:var(--dim)">Cada modelo é um HTML versionado no repositório da PierCar</div><div style="margin-top:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px">${['seminovo-destaque','chegou-agora','condição-especial','feirão','depoimento','antes-depois','institucional','financiamento'].map((n,i)=>`<div style="aspect-ratio:4/5; border-radius:12px; border:1px solid ${i===0?'var(--accent)':'var(--border)'}; background:linear-gradient(160deg, rgba(255,122,41,${0.10+i*0.02}), #151110); display:flex; align-items:flex-end; padding:10px; font-size:10px; font-weight:700; cursor:pointer" data-toast="Modelo: ${n}">${n}</div>`).join('')}</div></div>`; }
 function igAgendados(){ return `<div class="card" style="padding:0; overflow:hidden; max-width:1180px"><div class="thead" style="grid-template-columns:2fr 1fr 1fr 1fr"><div>CONTEÚDO</div><div>TIPO</div><div>QUANDO</div><div>STATUS</div></div>${[['Onix 2020, único dono','Carrossel','17/07 18h','AGUARDA','#EAB308'],['Feirão de julho','Post','19/07 09h','AGENDADO','var(--accent)'],['Depoimento, Sr. Antônio','Story','20/07 12h','AGENDADO','var(--accent)'],['HB20 2022','Carrossel','15/07 18h','PUBLICADO','#8A8F98']].map(([c,t,q,s,cc])=>`<div class="trow" style="grid-template-columns:2fr 1fr 1fr 1fr"><div style="font-weight:600">${c}</div><div style="color:var(--dim)">${t}</div><div class="num" style="color:var(--dim)">${q}</div><div><span style="padding:3px 10px; border:1px solid ${cc}; color:${cc}; border-radius:999px; font-size:8px; letter-spacing:.1em; font-weight:700">${s}</span></div></div>`).join('')}</div>`; }
 
+function igPerfil(){
+  const ws=activeWs(), ig=ws&&ws.instagram;
+  if(!ig){
+    return `<div class="card" style="max-width:560px"><div class="lbl">CONECTAR INSTAGRAM</div>
+      <div style="margin-top:8px; font-size:12px; color:var(--dim)">Informe o @ desta empresa para abrir direto o Instagram dela a partir do hub.</div>
+      <div style="margin-top:16px; display:flex; gap:10px">
+        <div style="flex:1; display:flex; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:0 14px"><span style="color:var(--dim); font-size:13px">@</span><input id="igHandle" placeholder="usuario.da.empresa" style="flex:1; background:none; border:0; color:var(--ink); padding:12px 8px; font:500 13px 'Montserrat'; outline:none"></div>
+        <button class="kbtn" data-ighandle-save>Salvar</button>
+      </div></div>`;
+  }
+  const url='https://instagram.com/'+ig;
+  return `<div class="card" style="max-width:560px; overflow:hidden; padding:0">
+    <div style="padding:26px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border)">
+      <div style="width:64px;height:64px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:58px;height:58px;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">${initials(ws.name)}</div></div>
+      <div style="flex:1; min-width:0"><div style="font-size:16px; font-weight:800">@${ig}</div><div style="font-size:11px; color:var(--dim)">${ws.name}</div></div>
+    </div>
+    <div style="padding:22px 26px; display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+      <button class="kbtn" data-igopen="${url}">Abrir no Instagram &#8599;</button>
+      <button class="obtn" data-ighandle-edit>Trocar @</button>
+      <div style="flex:1; min-width:60px"></div><span style="font-size:11px; color:var(--dim)" class="mono">${url.replace('https://','')}</span>
+    </div>
+  </div>`;
+}
 function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Funcionários','Metas','Relatórios','Calculadoras'];
   return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">GESTÃO PRO</div><h1>Agenda</h1></div><div style="flex:1"></div><button class="obtn" data-toast="Anotações">Anotações</button><div class="modesw"><div class="on" style="cursor:default">Semana</div><div style="color:var(--dim)" data-toast="Visão de mês">Mês</div><div style="color:var(--dim)" data-toast="Visão de lista">Lista</div></div><button class="kbtn" data-toast="Novo compromisso">+ Criar</button></div>
   <div class="divider" style="margin:14px 0 18px"></div>
@@ -447,7 +514,7 @@ function h7(){ const mods=[['Meu site','aba do site e métricas',1],['Instagram'
 /* ---------- CRM (subsections + kanban drag) ---------- */
 const CRM_TABS=[['funil','Funil'],['conversas','Conversas'],['leads','Leads'],['metricas','Métricas']];
 const AV=(n,c,sz=26)=>`<span class="av" style="width:${sz}px;height:${sz}px;background:${c}">${n.split(' ').map(w=>w[0]).slice(0,2).join('')}</span>`;
-const LEADS=[
+let LEADS=[
   {id:1,n:'Marcos Vinícius',car:'Onix 2020',v:68900,src:'Instagram',stage:0,c:'#6366F1',t:'12 min'},
   {id:2,n:'Patrícia Rocha',car:'Kwid 2022',v:52000,src:'Meta Ads',stage:0,c:'#DB2777',t:'3 h'},
   {id:3,n:'Fernanda Melo',car:'Argo 2021',v:64000,src:'Instagram',stage:0,c:'#4F46E5',t:'4 h'},
@@ -464,14 +531,18 @@ const LEADS=[
 const CRM_STAGES=[['Novo lead','var(--dim)'],['Em contato','#5AA9F9'],['Test drive','var(--accent)'],['Proposta','#B08CFF'],['Fechado','#22C55E']];
 const brl0=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 function crmScreen(){
-  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">FUNIL DE VENDAS</div><h1>CRM</h1></div><div style="flex:1"></div><button class="obtn" data-toast="Filtro de vendedores">Todos os vendedores</button><button class="kbtn" data-toast="Cadastro de lead">+ Novo lead</button></div>
+  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">FUNIL DE VENDAS</div><h1>CRM</h1></div><div style="flex:1"></div><button class="obtn" data-toast="Filtro de vendedores">Todos os vendedores</button><button class="kbtn" data-newlead>+ Novo lead</button></div>
   <div class="divider"></div>
   <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap">${CRM_TABS.map(([id,l])=>`<button class="pill ${S.crm===id?'on':''}" data-crm="${id}">${l}</button>`).join('')}</div>
   <div class="fadein" id="crmPanel">${crmPanel()}</div>`;
 }
 function crmPanel(){ if(S.crm==='conversas') return crmConversas(); if(S.crm==='leads') return crmLeads(); if(S.crm==='metricas') return crmMetricas(); return crmFunil(); }
 function crmFunil(){
-  return `<div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:22px; max-width:1180px">${stat('LEADS NO FUNIL','14','R$ 782.400 em potencial')}${stat('TEST DRIVES','3','agendados esta semana')}${stat('FECHADOS NO MÊS','6','R$ 384.200 em vendas',true)}${stat('CONVERSÃO','18,5%','lead até a venda')}</div>
+  const total=LEADS.length, potential=LEADS.reduce((a,l)=>a+l.v,0);
+  const ativos=LEADS.filter(l=>l.stage>0&&l.stage<4).length;
+  const fechados=LEADS.filter(l=>l.stage===4), fechSum=fechados.reduce((a,l)=>a+l.v,0);
+  const conv=total?((fechados.length/total)*100).toFixed(1).replace('.',',')+'%':'0%';
+  return `<div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:22px; max-width:1180px">${stat('LEADS NO FUNIL',total,brl0(potential)+' em potencial')}${stat('EM NEGOCIAÇÃO',ativos,'em etapas ativas')}${stat('FECHADOS',fechados.length,brl0(fechSum)+' em vendas',true)}${stat('CONVERSÃO',conv,'lead até fechar')}</div>
   <div class="board" id="board">${CRM_STAGES.map((s,si)=>{const items=LEADS.filter(l=>l.stage===si);const sum=items.reduce((a,l)=>a+l.v,0);return `<div class="col"><div class="ch"><span class="dt" style="background:${s[1]}"></span><b>${s[0]}</b><span class="n">${items.length}</span></div><div style="font-size:10px; color:var(--dim); margin:-6px 0 10px 16px">${brl0(sum)}</div><div class="dz" data-stage="${si}">${items.map(leadCard).join('')}</div></div>`;}).join('')}</div>`;
 }
 function leadCard(l){ return `<div class="lead" draggable="true" data-id="${l.id}"><div class="lt">${AV(l.n,l.c)}<div><div class="nm">${l.n}</div><div class="cr">${l.car}</div></div></div><div class="val num">${brl0(l.v)}</div><div class="lb"><span class="chip" style="padding:2px 8px; font-size:9px">${l.src}</span><span style="margin-left:auto; font-size:9px; color:${l.stage===4?'#22C55E':'var(--dim)'}; ${l.stage===4?'font-weight:700':''}">${l.t}</span></div></div>`; }
@@ -502,12 +573,15 @@ function renderScreen(){
   if(S.screen==='hcrm' && S.crm==='funil') wireDnd();
   if(S.screen==='hcrm' && S.crm==='conversas') wireConv();
 }
-function render(){ document.body.dataset.mode=S.mode; renderShell(); renderScreen(); }
+function render(){ document.body.dataset.mode=S.mode;
+  if(S.mode==='hub'){ const ws=activeWs(); document.body.style.setProperty('--accent', ws&&ws.brand_color?ws.brand_color:'#FF7A29'); }
+  else document.body.style.removeProperty('--accent');
+  renderShell(); renderScreen(); }
 
 /* ---------- interactions ---------- */
 function wireDnd(){ let dragId=null; const b=$('board'); if(!b)return;
-  b.querySelectorAll('.lead').forEach(el=>{ el.addEventListener('dragstart',()=>{dragId=+el.dataset.id;el.classList.add('drag');}); el.addEventListener('dragend',()=>{el.classList.remove('drag');b.querySelectorAll('.dz').forEach(z=>z.classList.remove('drop'));}); });
-  b.querySelectorAll('.dz').forEach(z=>{ z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drop');}); z.addEventListener('dragleave',()=>z.classList.remove('drop')); z.addEventListener('drop',e=>{e.preventDefault();const l=LEADS.find(x=>x.id===dragId);if(l){const to=+z.dataset.stage;if(l.stage!==to){l.stage=to;$('crmPanel').innerHTML=crmFunil();wireDnd();toast(l.n+' → '+CRM_STAGES[to][0]);}}}); });
+  b.querySelectorAll('.lead').forEach(el=>{ el.addEventListener('dragstart',()=>{dragId=el.dataset.id;el.classList.add('drag');}); el.addEventListener('dragend',()=>{el.classList.remove('drag');b.querySelectorAll('.dz').forEach(z=>z.classList.remove('drop'));}); });
+  b.querySelectorAll('.dz').forEach(z=>{ z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drop');}); z.addEventListener('dragleave',()=>z.classList.remove('drop')); z.addEventListener('drop',e=>{e.preventDefault();const l=LEADS.find(x=>x.id===dragId);if(l){const to=+z.dataset.stage;if(l.stage!==to){const from=l.stage;l.stage=to;$('crmPanel').innerHTML=crmFunil();wireDnd();toast(l.n+' → '+CRM_STAGES[to][0]);sb.from('leads').update({stage:to}).eq('id',l.id).then(({error})=>{if(error){l.stage=from;toast('Falha ao salvar, revertido');if(S.screen==='hcrm'&&S.crm==='funil'){$('crmPanel').innerHTML=crmFunil();wireDnd();}}});}}}); });
 }
 function wireConv(){ const w=$('walist'); if(!w)return;
   w.addEventListener('click',e=>{const c=e.target.closest('[data-conv]');if(c){curConv=+c.dataset.conv;const cv=CONV.find(x=>x.id===curConv);cv.u=0;$('crmPanel').innerHTML=crmConversas();wireConv();}});
@@ -521,13 +595,107 @@ document.addEventListener('click',e=>{
   const ig=e.target.closest('[data-ig]'); if(ig){ S.ig=ig.dataset.ig; renderScreen(); return; }
   const cr=e.target.closest('[data-crm]'); if(cr){ S.crm=cr.dataset.crm; renderScreen(); return; }
   const fin=e.target.closest('[data-fin]'); if(fin){ window.location.href='financeiro.html'; return; }
+  const nl=e.target.closest('[data-newlead]'); if(nl){ newLead(); return; }
+  const lo=e.target.closest('[data-logout]'); if(lo){ logout(); return; }
+  const igo=e.target.closest('[data-igopen]'); if(igo){ window.open(igo.dataset.igopen,'_blank','noopener'); return; }
+  const igp=e.target.closest('[data-igprofile]'); if(igp){ const ws=activeWs(); if(ws&&ws.instagram){ window.open('https://instagram.com/'+ws.instagram,'_blank','noopener'); } else { S.ig='perfil'; renderScreen(); } return; }
+  const ihs=e.target.closest('[data-ighandle-save]'); if(ihs){ const i=$('igHandle'); saveIgHandle(i&&i.value); return; }
+  const ihe=e.target.closest('[data-ighandle-edit]'); if(ihe){ const ws=activeWs(); saveIgHandle(prompt('@ do Instagram:', (ws&&ws.instagram)||'')); return; }
   const fc=e.target.closest('[data-fchip]'); if(fc){ fc.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on')); fc.classList.add('on'); return; }
   const tg=e.target.closest('[data-tgl]'); if(tg){ const on=!tg.classList.contains('on'); tg.classList.toggle('on'); tg.style.background=on?'var(--accent)':'rgba(255,255,255,0.12)'; tg.innerHTML=`<span style="position:absolute; top:2px; ${on?'right:2px':'left:2px'}; width:16px; height:16px; border-radius:99px; background:${on?'#0A0C0A':'#F4F6F3'}"></span>`; return; }
   const t=e.target.closest('[data-toast]'); if(t){ toast(t.dataset.toast); return; }
   const igs=e.target.closest('#igSend'); if(igs){ const i=$('igInput'); if(i&&i.value.trim()){ toast('Claude está gerando o ajuste'); i.value=''; } return; }
 });
 
-render();
+/* ---------- supabase-driven shell helpers ---------- */
+function modeSwitch(){ const ws=activeWs(); const hn=ws?ws.name.split(' ')[0]:'Cliente';
+  return `<div class="modesw"><div class="consw ${S.mode==='console'?'on':''}" data-mode="console">Console EM Digital</div><div class="${S.mode==='hub'?'on':''}" data-mode="hub">Hub: ${hn}</div></div>`; }
+function wsPicker(){ if(!WORKSPACES.length) return '';
+  return `<div class="wspick"><label>PRÉVIA DO HUB</label><select id="wsPick">${WORKSPACES.map(w=>`<option value="${w.id}" ${w.id===S.wsId?'selected':''}>${w.name}</option>`).join('')}</select></div>`; }
+
+/* ---------- data loading ---------- */
+async function loadWorkspaceLeads(wsId){
+  if(!wsId){ LEADS=[]; return; }
+  const { data, error } = await sb.from('leads').select('*').eq('workspace_id',wsId).order('created_at',{ascending:true});
+  if(error){ toast('Erro ao carregar leads'); LEADS=[]; return; }
+  LEADS = (data||[]).map(mapLead);
+}
+async function loadData(){
+  const { data:{ user } } = await sb.auth.getUser(); S.user=user;
+  const { data:ws, error } = await sb.from('workspaces').select('*');
+  if(error){ toast('Erro ao carregar workspaces'); WORKSPACES=[]; }
+  else WORKSPACES = (ws||[]).slice().sort((a,b)=> ((a.kind==='agency'?-1:0)-(b.kind==='agency'?-1:0)) || a.name.localeCompare(b.name));
+  const agency=WORKSPACES.find(w=>w.kind==='agency');
+  S.wsId = agency ? agency.id : (WORKSPACES[0] && WORKSPACES[0].id) || null;
+  if(S.wsId) localStorage.setItem('emhub_ws', S.wsId);
+  await loadWorkspaceLeads(S.wsId);
+}
+
+/* ---------- CRM write ---------- */
+async function newLead(){
+  const ws=activeWs(); if(!ws){ toast('Selecione um workspace'); return; }
+  const n=prompt('Nome do lead:'); if(!n) return;
+  const interest=prompt('Interesse (produto ou serviço):')||'';
+  const raw=prompt('Valor potencial (R$):')||'0';
+  const value=parseFloat(raw.replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'))||0;
+  const { data, error } = await sb.from('leads').insert({ workspace_id:ws.id, name:n.trim(), interest:interest.trim(), value, source:'Manual', stage:0 }).select().single();
+  if(error){ toast('Erro ao salvar lead'); return; }
+  LEADS.unshift(mapLead(data));
+  if(S.screen==='hcrm') renderScreen();
+  toast(n.trim()+' entrou no funil');
+}
+async function saveIgHandle(raw){
+  if(raw==null) return;
+  const ws=activeWs(); if(!ws){ toast('Selecione um workspace'); return; }
+  const h=String(raw).trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/^@+/,'').replace(/\s+/g,'').replace(/\/.*$/,'');
+  if(!h){ toast('Informe um @ válido'); return; }
+  const { error } = await sb.from('workspaces').update({ instagram:h }).eq('id',ws.id);
+  if(error){ toast('Não foi possível salvar (sem permissão?)'); return; }
+  ws.instagram=h;
+  if(S.screen==='h3') renderScreen();
+  toast('Instagram conectado: @'+h);
+}
+
+/* ---------- auth ---------- */
+function traduzErro(m){ m=m||''; if(/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.'; if(/Email not confirmed/i.test(m)) return 'E-mail ainda não confirmado no Supabase.'; if(/Failed to fetch|NetworkError|network/i.test(m)) return 'Sem conexão com o Supabase (rode via servidor local, veja abaixo).'; return m; }
+function showLogin(msg){
+  document.body.dataset.mode='console'; document.body.style.removeProperty('--accent');
+  const app=document.querySelector('.app'); if(app) app.style.display='none';
+  let ov=$('login'); if(!ov){ ov=document.createElement('div'); ov.id='login'; ov.className='loginwrap'; document.body.appendChild(ov); }
+  ov.style.display='flex';
+  ov.innerHTML=`<form class="loginbox" id="loginForm">
+    <div class="brand" style="justify-content:center; padding:0 0 6px"><span style="color:var(--accent)">EM</span>&nbsp;<span>Digital</span></div>
+    <div style="text-align:center; font-size:11px; color:var(--dim); margin-bottom:20px">Entre para acessar o hub</div>
+    <input class="lin" id="liEmail" type="email" placeholder="E-mail" autocomplete="username" value="ericminellio@gmail.com">
+    <input class="lin" id="liPass" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="kbtn" style="width:100%; justify-content:center; padding:12px" type="submit">Entrar</button>
+    <div id="liMsg" style="margin-top:12px; font-size:11px; color:var(--dim); text-align:center; min-height:14px">${msg||''}</div>
+  </form>`;
+  $('loginForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const email=$('liEmail').value.trim(), password=$('liPass').value;
+    const m=$('liMsg'); m.style.color='var(--dim)'; m.textContent='Entrando...';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ m.style.color='#E5484D'; m.textContent=traduzErro(error.message); return; }
+    ov.style.display='none'; if(app) app.style.display='';
+    await loadData(); render();
+  });
+  setTimeout(()=>{ const p=$('liPass'); if(p) p.focus(); },50);
+}
+async function logout(){ try{ await sb.auth.signOut(); }catch(e){} WORKSPACES=[]; LEADS=[]; S.wsId=null; S.user=null; S.mode='console'; S.screen='c1'; showLogin('Sessão encerrada.'); }
+
+/* ---------- boot ---------- */
+document.addEventListener('change', async e=>{
+  const wp=e.target.closest('#wsPick'); if(wp){ S.wsId=wp.value; localStorage.setItem('emhub_ws', S.wsId); await loadWorkspaceLeads(S.wsId); render(); }
+});
+async function boot(){
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){ showLogin(); return; }
+    await loadData(); render();
+  }catch(err){ showLogin(traduzErro(err&&err.message)); }
+}
+boot();
 </script>
 </body>
 </html>
