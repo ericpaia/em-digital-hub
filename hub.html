@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EM Digital Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+  :root { --accent:#22E07C; --bg:#0A0C0A; --card:#111411; --card2:#151915; --border:rgba(255,255,255,0.07); --ink:#F4F6F3; --dim:#A8B0AA; --glow:rgba(34,224,124,0.09); }
+  [data-mode="hub"] { --accent:#FF7A29; --bg:#0C0A09; --card:#151110; --card2:#181310; --dim:#B3ACA5; --glow:rgba(255,122,41,0.10); }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body { background:var(--bg); color:var(--ink); font-family:'Montserrat',sans-serif; font-size:13px; -webkit-font-smoothing:antialiased; transition:background .3s; }
+  a { color:var(--accent); text-decoration:none; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:99px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+  .num { font-variant-numeric:tabular-nums; }
+  .mono { font-family:ui-monospace,'SF Mono',monospace; }
+
+  .glow { position:fixed; inset:0; pointer-events:none; background:radial-gradient(720px 460px at 88% -6%, var(--glow), transparent 70%); z-index:0; }
+  .app { position:relative; z-index:1; display:flex; min-height:100vh; }
+
+  /* sidebar */
+  .side { width:214px; flex:0 0 214px; background:var(--card2); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:20px 0 16px; position:sticky; top:0; height:100vh; overflow-y:auto; }
+  .brand { padding:0 18px 18px; font-weight:700; font-size:20px; letter-spacing:-.01em; display:flex; align-items:center; gap:10px; }
+  .brand .pc { width:30px; height:30px; border-radius:99px; background:var(--accent); color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex:none; }
+  .brand small { font-size:10px; color:var(--dim); font-weight:500; }
+  .whoami { margin:0 18px 14px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .whoami .av { width:26px; height:26px; border-radius:99px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--dim); flex:none; }
+  .whoami b { font-size:11px; font-weight:600; display:block; }
+  .whoami s { font-size:9px; color:var(--dim); text-decoration:none; display:block; }
+  .live { margin:0 18px 16px; display:flex; align-items:center; gap:7px; font-size:10px; color:var(--dim); }
+  .live .d { width:6px; height:6px; border-radius:99px; background:var(--accent); flex:none; }
+  .navwrap { flex:1; overflow-y:auto; }
+  .navgroup .gt { padding:8px 18px 6px; font-size:9px; letter-spacing:.2em; color:var(--dim); font-weight:600; }
+  .navgroup { padding:8px 0 4px; }
+  .navitem { padding:8px 18px 8px 16px; cursor:pointer; font-size:12.5px; border-left:2px solid transparent; color:var(--dim); font-weight:500; }
+  .navitem:hover { color:var(--ink); }
+  .navitem.on { border-left-color:var(--accent); color:var(--accent); font-weight:700; }
+  .metacard { margin:14px 18px 0; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:14px; }
+  .metacard .l { font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600; }
+  .metacard .v { margin-top:6px; font-size:12px; font-weight:600; }
+  .metacard .bar { margin-top:8px; height:4px; border-radius:99px; background:rgba(255,255,255,0.08); }
+  .metacard .bar i { display:block; height:4px; border-radius:99px; background:var(--accent); }
+  .metacard .s { margin-top:6px; font-size:10px; color:var(--dim); }
+  .opby { margin:12px 18px 0; padding-top:12px; border-top:1px solid var(--border); font-size:10px; color:var(--dim); }
+  .opby .g { font-weight:700; color:#22E07C; }
+
+  /* main */
+  .main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .top { height:58px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:0 26px; position:sticky; top:0; background:var(--bg); z-index:20; }
+  .modesw { display:flex; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; }
+  .modesw div { padding:6px 16px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer; color:var(--dim); }
+  .modesw div.on { background:var(--accent); color:#0A0C0A; }
+  [data-mode="hub"] .modesw div.on.consw { background:transparent; color:var(--dim); }
+  .toplabel { font-size:9px; letter-spacing:.18em; font-weight:600; color:var(--dim); }
+  .topbadge { padding:5px 14px; border:1px solid var(--accent); border-radius:999px; font-size:9px; letter-spacing:.14em; font-weight:700; color:var(--accent); }
+  .content { flex:1; overflow-y:auto; padding:30px 32px 48px; }
+
+  /* primitives */
+  .eyebrow { font-size:10px; letter-spacing:.2em; color:var(--accent); font-weight:700; }
+  h1 { margin:8px 0 0; font-size:30px; font-weight:800; letter-spacing:-.02em; }
+  .divider { width:60px; height:2px; background:var(--accent); margin:14px 0 26px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px; }
+  .lbl { font-size:9px; letter-spacing:.18em; color:var(--dim); font-weight:600; }
+  .big { margin-top:10px; font-weight:700; font-size:clamp(22px,2.4vw,34px); white-space:nowrap; }
+  .sub { margin-top:6px; font-size:11px; color:var(--dim); }
+  .grid { display:grid; gap:18px; }
+  .kbtn { background:var(--accent); color:#0A0C0A; border-radius:999px; padding:9px 20px; font-size:11px; font-weight:700; cursor:pointer; border:0; display:inline-flex; align-items:center; gap:6px; }
+  .obtn { border:1px solid var(--border); color:var(--dim); border-radius:999px; padding:9px 20px; font-size:11px; font-weight:600; cursor:pointer; background:none; }
+  .obtn:hover { border-color:var(--accent); color:var(--ink); }
+  .pill { padding:7px 16px; border-radius:999px; border:1px solid var(--border); color:var(--dim); font-size:10.5px; font-weight:600; cursor:pointer; background:none; }
+  .pill.on { background:var(--accent); color:#0A0C0A; border-color:var(--accent); font-weight:700; }
+  .pill:hover:not(.on) { color:var(--ink); }
+  .chip { border:1px solid var(--border); border-radius:999px; padding:5px 13px; font-size:10.5px; color:var(--dim); }
+
+  /* toast */
+  .toasts { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:100; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; }
+  .toast { background:var(--card); border:1px solid var(--accent); color:var(--ink); padding:11px 18px; border-radius:999px; font-size:12px; box-shadow:0 8px 30px rgba(0,0,0,.4); }
+
+  /* chart anim */
+  @keyframes cdraw { to { stroke-dashoffset:0; } }
+  .cline { stroke-dasharray:1 1; stroke-dashoffset:1; animation:cdraw 1.1s ease forwards; }
+  @media (prefers-reduced-motion:reduce){ .cline{ animation:none; stroke-dasharray:none; } }
+
+  /* kanban */
+  .board { display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
+  .col { flex:0 0 auto; width:224px; }
+  .col .ch { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .col .ch .dt { width:8px; height:8px; border-radius:99px; flex:none; }
+  .col .ch b { font-size:12px; font-weight:700; }
+  .col .ch .n { margin-left:auto; font-size:10px; color:var(--dim); }
+  .dz { min-height:60px; border-radius:12px; transition:background .12s; }
+  .dz.drop { background:rgba(255,255,255,0.04); outline:1px dashed var(--accent); }
+  .lead { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:9px; cursor:grab; }
+  .lead:active { cursor:grabbing; }
+  .lead.drag { opacity:.4; }
+  .lead .lt { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .lead .av { width:26px; height:26px; border-radius:99px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; flex:none; }
+  .lead .nm { font-size:12px; font-weight:700; }
+  .lead .cr { font-size:10px; color:var(--dim); }
+  .lead .val { font-size:13px; font-weight:800; margin-bottom:8px; }
+  .lead .lb { display:flex; align-items:center; }
+
+  /* whatsapp */
+  .wabox { display:grid; grid-template-columns:290px 1fr; border:1px solid var(--border); border-radius:18px; overflow:hidden; height:540px; background:var(--card); }
+  .walist { border-right:1px solid var(--border); overflow-y:auto; }
+  .wc { display:flex; align-items:center; gap:11px; padding:12px 14px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .wc:hover { background:var(--card2); }
+  .wc.on { background:var(--card2); }
+  .wc .av { width:36px; height:36px; border-radius:99px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; }
+  .wc .tx { min-width:0; flex:1; }
+  .wc .tx b { font-size:12px; font-weight:600; display:block; }
+  .wc .tx s { font-size:10.5px; color:var(--dim); text-decoration:none; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wc .rt { text-align:right; }
+  .wc .rt .t { font-size:9px; color:var(--dim); }
+  .wc .rt .b { display:inline-block; margin-top:4px; min-width:16px; height:16px; border-radius:99px; background:#22C55E; color:#04310F; font-size:9px; font-weight:700; line-height:16px; }
+  .wthread { display:flex; flex-direction:column; min-width:0; }
+  .whead { display:flex; align-items:center; gap:11px; padding:12px 16px; border-bottom:1px solid var(--border); }
+  .whead .av { width:34px; height:34px; border-radius:99px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; }
+  .wmsgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px; background:var(--card2); }
+  .wm { max-width:74%; font-size:12px; line-height:1.45; padding:8px 11px; border-radius:10px; }
+  .wm.them { background:var(--card); align-self:flex-start; border-bottom-left-radius:3px; }
+  .wm.me { background:rgba(34,197,94,0.14); align-self:flex-end; border-bottom-right-radius:3px; }
+  .wm .t { font-size:9px; color:var(--dim); margin-top:2px; text-align:right; }
+  .wain { display:flex; gap:9px; padding:12px; border-top:1px solid var(--border); }
+  .wain input { flex:1; min-width:0; border:1px solid var(--border); border-radius:999px; padding:9px 14px; background:var(--card2); color:var(--ink); font:400 12px 'Montserrat'; }
+  .wain input:focus { outline:none; border-color:#22C55E; }
+  .wain button { width:36px; height:36px; border-radius:99px; border:0; background:#22C55E; color:#04310F; cursor:pointer; font-size:14px; font-weight:800; flex:none; }
+
+  /* generic table grid */
+  .thead, .trow { display:grid; gap:10px; align-items:center; }
+  .thead { padding:12px 20px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600; }
+  .trow { padding:14px 20px; border-bottom:1px solid var(--border); font-size:12px; }
+  .trow:last-child { border-bottom:0; }
+  .cavatar { width:30px; height:30px; border-radius:99px; color:#0A0C0A; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px; flex:none; }
+
+  .fadein { animation:fade .35s ease; }
+  @keyframes fade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body data-mode="console">
+<div class="glow"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="top" id="top"></div>
+    <div class="content"><div id="screen"></div></div>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; $('toasts').appendChild(t); setTimeout(()=>{t.style.opacity=0;t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2200); }
+
+/* ---------- state ---------- */
+const S = { mode:'console', screen:'c1', ig:'carrossel', crm:'funil' };
+
+/* ---------- data ---------- */
+const CLIENTES=[
+  {nome:'PierCar Multimarcas',slug:'piercar',ini:'PC',cor:'#FF7A29',mod:['Site','Instagram','Financeiro'],cx:'Assento Team',custo:'R$ 276/mês',uso:'12%',usoc:'var(--accent)',st:'ATIVO',stc:'var(--accent)'},
+  {nome:'Ariza',slug:'ariza',ini:'AR',cor:'#5AA9F9',mod:['Site','Instagram'],cx:'API Sonnet',custo:'R$ 74/mês',uso:'84%',usoc:'#E5484D',st:'NO TETO',stc:'#E5484D'},
+  {nome:'Odonto Max',slug:'odonto-max',ini:'OM',cor:'#22C55E',mod:['Site'],cx:'API Haiku',custo:'R$ 21/mês',uso:'6%',usoc:'var(--accent)',st:'ATIVO',stc:'var(--accent)'},
+  {nome:'Domínio 3 Dimensões',slug:'dominio-3d',ini:'D3',cor:'#B08CFF',mod:['Site','Financeiro'],cx:'API Sonnet',custo:'R$ 31/mês',uso:'18%',usoc:'var(--accent)',st:'ATIVO',stc:'var(--accent)'},
+  {nome:'Tuba Lyra',slug:'tuba-lyra',ini:'TL',cor:'#EAB308',mod:['Instagram'],cx:'API Haiku',custo:'R$ 29/mês',uso:'31%',usoc:'var(--accent)',st:'ATIVO',stc:'var(--accent)'},
+  {nome:'Nova Ótica',slug:'nova-otica',ini:'NO',cor:'#9CA3AF',mod:[],cx:'Não conectado',custo:'R$ 0/mês',uso:'0%',usoc:'var(--accent)',st:'CONFIGURANDO',stc:'#8A8F98'},
+];
+const CONSUMO=[['PierCar Multimarcas','#FF7A29','100%','318,1k'],['Ariza','#5AA9F9','13%','41,9k'],['Tuba Lyra','#EAB308','4.5%','14,3k'],['Domínio 3 Dimensões','#B08CFF','0.2%','0,4k'],['Odonto Max','#22C55E','0.1%','0']];
+function spark(pts){ const d='M'+pts.map((y,i)=>(i*(260/(pts.length-1))).toFixed(0)+','+y).join(' L'); return {l:d,a:d+' L260,54 L0,54 Z'}; }
+const TOKENS=[
+  {nome:'PierCar Multimarcas',ini:'PC',cor:'#FF7A29',chat:'8,7k',ger:'83,4k',hai:'0',opus:'225,9k',usado:'318,1k',teto:'380k',lim:'84%',sp:spark([46,44,40,36,30,22,14,8])},
+  {nome:'Ariza',ini:'AR',cor:'#5AA9F9',chat:'11,2k',ger:'30,7k',hai:'0',opus:'0',usado:'41,9k',teto:'50k',lim:'84%',sp:spark([48,46,47,42,40,38,34,30])},
+  {nome:'Tuba Lyra',ini:'TL',cor:'#EAB308',chat:'989',ger:'13,3k',hai:'0',opus:'0',usado:'14,3k',teto:'sem teto',lim:'20%',sp:spark([49,47,46,44,43,41,40,38])},
+  {nome:'Domínio 3 Dimensões',ini:'D3',cor:'#B08CFF',chat:'412',ger:'0',hai:'0',opus:'0',usado:'0,4k',teto:'sem teto',lim:'10%',sp:spark([50,49,48,48,46,45,44,42])},
+  {nome:'Odonto Max',ini:'OM',cor:'#22C55E',chat:'0',ger:'0',hai:'0',opus:'0',usado:'0',teto:'sem teto',lim:'5%',sp:spark([50,50,49,49,48,48,47,47])},
+];
+
+/* ---------- nav ---------- */
+const NAV = {
+  console:[
+    {t:'OPERAÇÃO',items:[['c1','Visão geral'],['c2','Clientes']]},
+    {t:'PLATAFORMA',items:[['c3','Contas Claude'],['c4','Assentos Claude'],['c5','Tokens']]},
+  ],
+  hub:[
+    {t:'NEGÓCIO',items:[['h1','Visão geral'],['h2','Meu site'],['h3','Instagram']]},
+    {t:'GESTÃO',items:[['h4','Financeiro'],['hcrm','CRM'],['h5','Agenda']]},
+    {t:'SISTEMA',items:[['h6','Claude'],['h7','Configurações']]},
+  ],
+};
+const LABELS = {
+  console:{ user:'Erick Sander',ini:'ES',role:'Owner, EM Digital',top:'CONSOLE OWNER',badge:'6 CLIENTES',ml:'META DO MÊS',mv:'R$ 1.500 de R$ 2.000',mp:'75%',ms:'faltam 2 hubs para a meta' },
+  hub:{ user:'Paulo Cintra',ini:'PC',role:'Proprietário',top:'HUB DO CLIENTE',badge:'PLANO COMPLETO',ml:'META DO TRIMESTRE',mv:'R$ 331.200 de R$ 540.000',mp:'61%',ms:'faltam R$ 208.800' },
+};
+
+/* ---------- shell ---------- */
+function renderShell(){
+  const L=LABELS[S.mode];
+  $('side').innerHTML =
+    (S.mode==='console'
+      ? `<div class="brand"><span style="color:var(--accent)">EM</span>&nbsp;<span>Digital</span></div>`
+      : `<div class="brand"><span class="pc">PC</span><span>PierCar<br><small>Multimarcas</small></span></div>`)
+    + `<div class="whoami"><span class="av">${L.ini}</span><span><b>${L.user}</b><s>${L.role}</s></span></div>`
+    + `<div class="live"><span class="d"></span> Operacional, sem alertas</div>`
+    + `<div class="navwrap">${NAV[S.mode].map(g=>`<div class="navgroup"><div class="gt">${g.t}</div>${g.items.map(([id,l])=>`<div class="navitem ${S.screen===id?'on':''}" data-nav="${id}">${l}</div>`).join('')}</div>`).join('')}</div>`
+    + `<div class="metacard"><div class="l">${L.ml}</div><div class="v">${L.mv}</div><div class="bar"><i style="width:${L.mp}"></i></div><div class="s">${L.ms}</div></div>`
+    + (S.mode==='hub'?`<div class="opby">Operado por <span class="g">EM</span> Digital</div>`:'');
+  $('top').innerHTML =
+    `<div class="modesw"><div class="consw ${S.mode==='console'?'on':''}" data-mode="console">Console EM Digital</div><div class="${S.mode==='hub'?'on':''}" data-mode="hub">Hub: PierCar</div></div>`
+    + `<div style="flex:1"></div><div class="toplabel">${L.top}</div><div class="topbadge">${L.badge}</div>`;
+}
+
+/* ---------- helpers ---------- */
+const stat=(l,v,s,acc)=>`<div class="card"><div class="lbl" ${acc?'style="color:var(--accent)"':''}>${l}</div><div class="big num" ${acc?'style="color:var(--accent)"':''}>${v}</div><div class="sub">${s}</div></div>`;
+const head=(eb,t)=>`<div class="eyebrow">${eb}</div><h1>${t}</h1><div class="divider"></div>`;
+function gauge(pct,label){ const c=226.2,on=(c*pct/100).toFixed(1); return `<div style="text-align:center"><svg width="84" height="84" viewBox="0 0 88 88"><circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/><circle cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${on} ${c}" transform="rotate(-90 44 44)"/><text x="44" y="49" text-anchor="middle" fill="#F4F6F3" font-size="15" font-weight="700" font-family="Montserrat">${pct}%</text></svg><div style="margin-top:6px; font-size:9px; letter-spacing:.12em; color:var(--dim); font-weight:600">${label}</div></div>`; }
+
+/* ---------- CONSOLE screens ---------- */
+function c1(){ return head('TEMPO REAL','Visão geral')+`
+  <div class="grid" style="grid-template-columns:2fr 1fr; align-items:start; max-width:1180px">
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+        ${stat('RECORRENTE','R$ 1.500','6 clientes ativos')}
+        ${stat('CUSTO CLAUDE','R$ 431','28,7% da receita')}
+        ${stat('MARGEM','R$ 1.069','71,3% da receita',true)}
+      </div>
+      <div class="card">
+        <div class="lbl">CONSUMO DE TOKENS</div><div style="margin-top:4px; font-size:14px; font-weight:700">Consumo por cliente</div>
+        <div style="margin-top:16px; display:flex; flex-direction:column; gap:12px">
+          ${CONSUMO.map(([n,c,p,v])=>`<div style="display:grid; grid-template-columns:150px 1fr 56px; gap:12px; align-items:center"><div style="font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${n}</div><div style="height:8px; border-radius:99px; background:rgba(255,255,255,0.06)"><div style="height:8px; border-radius:99px; background:${c}; width:${p}"></div></div><div class="num" style="font-size:11px; text-align:right; color:var(--dim)">${v}</div></div>`).join('')}
+        </div>
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; color:var(--dim)">374,7k tokens no ciclo, trabalho real sem cache</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div class="card" style="display:flex; gap:14px; justify-content:space-around; padding:20px">${gauge(46,'USO DA ASSINATURA')}${gauge(94,'SAÚDE MÉDIA')}</div>
+      <div class="card" style="padding:20px"><div class="lbl">O QUE PRECISA DE VOCÊ</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#E5484D;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">Ariza chegou a 84% do teto de tokens</div></div>
+        <div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#EAB308;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">Carrossel da PierCar aguardando aprovação desde 14:32</div></div>
+        <div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#8A8F98;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">Nova Ótica sem conexão Claude, hub em configuração</div></div>
+      </div></div>
+      <div class="card" style="padding:20px"><div class="lbl">ÚLTIMOS HUBS ENTREGUES</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>PierCar Multimarcas</span><span class="num" style="color:var(--dim)">12/07</span></div>
+        <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Tuba Lyra</span><span class="num" style="color:var(--dim)">28/06</span></div>
+        <div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Odonto Max</span><span class="num" style="color:var(--dim)">15/06</span></div>
+      </div></div>
+    </div>
+  </div>`; }
+
+function c2(){ return head('6 CONTAS','Clientes')+`
+  <div style="display:flex; gap:12px; margin-bottom:18px; max-width:1180px">
+    <div style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:10px 18px; font-size:12px; color:var(--dim)">Buscar por nome, slug ou domínio</div>
+    <button class="obtn" data-toast="Filtro de status">Todos os status</button>
+    <button class="kbtn" data-toast="Cadastro de novo cliente">Novo cliente</button>
+  </div>
+  <div class="card" style="padding:0; overflow:hidden; max-width:1180px">
+    <div class="thead" style="grid-template-columns:2.1fr 1.5fr 1.1fr .8fr 1.2fr .9fr"><div>CLIENTE</div><div>MÓDULOS</div><div>CONEXÃO CLAUDE</div><div>CUSTO</div><div>TETO</div><div>STATUS</div></div>
+    ${CLIENTES.map(c=>`<div class="trow" style="grid-template-columns:2.1fr 1.5fr 1.1fr .8fr 1.2fr .9fr">
+      <div style="display:flex; align-items:center; gap:11px; min-width:0"><div class="cavatar" style="width:30px;height:30px;background:${c.cor}">${c.ini}</div><div style="min-width:0"><div style="font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${c.nome}</div><div style="font-size:10px; color:var(--dim)">${c.slug}</div></div></div>
+      <div style="display:flex; gap:5px; flex-wrap:wrap">${c.mod.map(m=>`<span class="chip" style="padding:3px 9px; font-size:9.5px">${m}</span>`).join('')||'<span style="color:var(--dim); font-size:10px">,</span>'}</div>
+      <div style="font-size:11px; color:var(--dim)">${c.cx}</div>
+      <div class="num" style="font-size:11.5px; white-space:nowrap">${c.custo}</div>
+      <div style="display:flex; align-items:center; gap:8px"><div style="flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,0.06)"><div style="height:5px; border-radius:99px; background:${c.usoc}; width:${c.uso}"></div></div><span class="num" style="font-size:10.5px; color:var(--dim)">${c.uso}</span></div>
+      <div><span style="padding:4px 11px; border:1px solid ${c.stc}; color:${c.stc}; border-radius:999px; font-size:8.5px; letter-spacing:.12em; font-weight:700; white-space:nowrap; display:inline-block">${c.st}</span></div>
+    </div>`).join('')}
+  </div>`; }
+
+function acctCard(letter,nome,sub,cli,j5,sem,btn){ return `<div class="card" style="padding:24px">
+  <div style="display:flex; align-items:center; gap:12px"><div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">${letter}</div><div style="flex:1"><div style="font-size:14px;font-weight:700">${nome}</div><div style="font-size:10.5px;color:var(--dim)">${sub}</div></div><span style="padding:4px 12px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;font-size:8.5px;letter-spacing:.14em;font-weight:700">VÁLIDA</span></div>
+  <div style="margin-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px">
+    ${[['CLIENTES',cli],['JANELA 5H',j5],['SEMANA',sem]].map(([l,v])=>`<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px"><div style="font-size:8.5px;letter-spacing:.14em;color:var(--dim);font-weight:600">${l}</div><div class="num" style="margin-top:6px;font-weight:700;font-size:22px">${v}</div></div>`).join('')}
+  </div>
+  <div style="margin-top:18px; display:flex; gap:10px"><button class="kbtn" data-toast="Gerenciar conta">Gerenciar</button><button class="obtn" data-toast="${btn}">${btn}</button></div></div>`; }
+function c3(){ return head('2 CONTAS CONECTADAS','Contas Claude')+`<div class="grid" style="grid-template-columns:1fr 1fr; max-width:1180px">${acctCard('C','Conta Hub','assinatura Max 5x, ciclo renova dia 03','4','62%','41%','Compartilhada')}${acctCard('T','TubaLyra, Claude','conta dedicada do cliente, ciclo renova dia 17','1','12%','8%','Dedicada')}</div>`; }
+
+function c4(){ return head('PLANO TEAM','Assentos Claude')+`
+  <div class="grid" style="grid-template-columns:repeat(3,1fr); max-width:760px">
+    ${stat('ASSENTOS','2','')}${stat('OCUPADOS','1','',true)}${stat('OCIOSOS','1','')}
+  </div>
+  <div class="card" style="margin-top:18px; padding:0; overflow:hidden; max-width:760px">
+    <div class="thead" style="grid-template-columns:.7fr 1.6fr 1fr .9fr .9fr"><div>ASSENTO</div><div>OCUPANTE</div><div>DESDE</div><div>CUSTO</div><div>USO DO TETO</div></div>
+    <div class="trow" style="grid-template-columns:.7fr 1.6fr 1fr .9fr .9fr"><div style="font-weight:700; font-size:16px">01</div><div style="display:flex; align-items:center; gap:10px"><div class="cavatar" style="width:26px;height:26px;font-size:10px;background:#FF7A29">PC</div><span>PierCar Multimarcas</span></div><div class="num" style="color:var(--dim)">12/07/2026</div><div class="num">R$ 276/mês</div><div class="num" style="color:var(--dim)">12%</div></div>
+    <div class="trow" style="grid-template-columns:.7fr 1.6fr 1fr .9fr .9fr"><div style="font-weight:700; font-size:16px; color:var(--dim)">02</div><div style="color:var(--dim)">Livre, disponível para o próximo cliente Team</div><div style="color:var(--dim)">,</div><div style="color:var(--dim)">R$ 0</div><div style="color:var(--dim)">0%</div></div>
+  </div>`; }
+
+function c5(){ return head('CONSUMO DE TOKENS','Tokens').replace('<div class="divider"></div>','<div style="margin-top:6px; font-size:12px; color:var(--dim)">5 clientes com Claude, 374,7k tokens usados no ciclo (trabalho real, sem cache)</div><div class="divider"></div>')+`
+  <div style="display:flex; gap:8px; margin-bottom:20px; align-items:center; flex-wrap:wrap"><span style="font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600">CONTA CLAUDE:</span><button class="pill on" data-fchip>Todos os clientes</button><button class="pill" data-fchip>Conta Hub 4</button><button class="pill" data-fchip>TubaLyra, Claude 1</button></div>
+  <div class="grid" style="grid-template-columns:1fr 300px; align-items:start; max-width:1280px">
+    <div class="grid" style="grid-template-columns:repeat(2,1fr); gap:16px">
+      ${TOKENS.map(tk=>`<div class="card" style="padding:20px">
+        <div style="display:flex; align-items:center; gap:10px"><div class="cavatar" style="width:26px;height:26px;font-size:10px;background:${tk.cor}">${tk.ini}</div><div style="font-size:13px; font-weight:700">${tk.nome}</div></div>
+        <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:10.5px">
+          <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#5AA9F9;margin-right:6px"></span>Chat</span><span class="num">${tk.chat}</span></div>
+          <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:var(--accent);margin-right:6px"></span>Gerador</span><span class="num">${tk.ger}</span></div>
+          <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#EAB308;margin-right:6px"></span>Haiku</span><span class="num">${tk.hai}</span></div>
+          <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#B08CFF;margin-right:6px"></span>Opus</span><span class="num">${tk.opus}</span></div>
+        </div>
+        <svg width="100%" height="54" viewBox="0 0 260 54" preserveAspectRatio="none" style="margin-top:12px; display:block"><path d="${tk.sp.a}" fill="rgba(255,255,255,0.05)"/><path class="cline" pathLength="1" d="${tk.sp.l}" fill="none" stroke="${tk.cor}" stroke-width="1.5"/></svg>
+        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:baseline"><span class="num" style="font-weight:700; font-size:17px">${tk.usado}</span><span class="num" style="font-size:10.5px; color:var(--dim)">/ ${tk.teto}</span></div>
+        <div style="margin-top:10px; display:flex; align-items:center; gap:10px"><span style="font-size:8.5px; letter-spacing:.14em; color:var(--dim); font-weight:600">LIMITE</span><div style="flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,0.08); position:relative"><div style="height:4px; border-radius:99px; background:var(--accent); width:${tk.lim}"></div><div style="position:absolute; top:-4px; left:${tk.lim}; width:12px; height:12px; margin-left:-6px; border-radius:99px; background:#F4F6F3"></div></div></div>
+        <div style="margin-top:14px; display:flex; gap:8px"><button class="obtn" style="flex:1; padding:7px 0; text-align:center" data-toast="Limite travado">Travar</button><button class="obtn" style="padding:7px 14px" data-toast="Atualizado">Atualizar</button></div>
+      </div>`).join('')}
+    </div>
+    <div class="card" style="padding:22px; position:sticky; top:0">
+      <div class="lbl">ASSINATURA HUB</div><div style="margin-top:4px; font-size:11px; color:var(--dim)">4 clientes compartilham esta conta</div>
+      <div style="margin-top:14px; display:flex; align-items:baseline; gap:10px"><span class="num" style="font-weight:700; font-size:clamp(28px,3vw,40px)">374,7k</span><span style="font-size:10.5px; color:var(--dim)">sem teto</span></div>
+      <div style="margin-top:14px; display:flex; flex-direction:column; gap:9px; font-size:11px">
+        <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#5AA9F9;margin-right:7px"></span>Chat (Sonnet)</span><span class="num">24,4k</span></div>
+        <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:var(--accent);margin-right:7px"></span>Gerador de conteúdo</span><span class="num">124,4k</span></div>
+        <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#EAB308;margin-right:7px"></span>Haiku</span><span class="num">0</span></div>
+        <div style="display:flex; justify-content:space-between"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:99px;background:#B08CFF;margin-right:7px"></span>Opus</span><span class="num">225,9k</span></div>
+      </div>
+      <svg width="100%" height="90" viewBox="0 0 256 90" preserveAspectRatio="none" style="margin-top:16px; display:block"><line x1="0" y1="30" x2="256" y2="30" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 6"/><line x1="0" y1="60" x2="256" y2="60" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 6"/><path d="M0,78 L36,72 L72,64 L108,66 L144,50 L180,44 L216,28 L256,14 L256,90 L0,90 Z" fill="rgba(34,224,124,0.10)"/><path class="cline" pathLength="1" d="M0,78 L36,72 L72,64 L108,66 L144,50 L180,44 L216,28 L256,14" fill="none" stroke="var(--accent)" stroke-width="1.5"/><circle cx="256" cy="14" r="3.5" fill="var(--accent)"/></svg>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border)"><div style="display:flex; justify-content:space-between; font-size:9px; letter-spacing:.14em; color:var(--dim); font-weight:600"><span>LIMITE DO HUB</span><span>ILIMITADO</span></div><div style="margin-top:10px; display:flex; align-items:center; gap:10px"><div style="flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,0.08); position:relative"><div style="position:absolute; top:-4px; left:0; width:12px; height:12px; border-radius:99px; background:#F4F6F3"></div></div><button class="obtn" style="border-color:var(--accent); color:var(--accent); padding:5px 14px; font-size:10px" data-toast="Limite aplicado">Aplicar</button></div></div>
+    </div>
+  </div>`; }
+
+/* ---------- HUB screens ---------- */
+function h1(){ return head('SEU NEGÓCIO HOJE','Visão geral')+`
+  <div class="grid" style="grid-template-columns:2fr 1fr; align-items:start; max-width:1180px">
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div class="grid" style="grid-template-columns:repeat(3,1fr)">${stat('ESTOQUE','34','veículos anunciados')}${stat('VISITAS AO SITE','1.247','últimos 7 dias')}${stat('LEADS NO WHATSAPP','18','3 aguardando resposta',true)}</div>
+      <div class="card"><div style="display:flex; justify-content:space-between; align-items:baseline"><div><div class="lbl">FATURAMENTO</div><div style="margin-top:4px; font-size:14px; font-weight:700">Últimos 6 meses</div></div><div class="num" style="font-weight:700; font-size:22px">R$ 186.400 <span style="font-size:10px; color:var(--dim); font-weight:500">em julho</span></div></div>
+        <svg width="100%" height="180" viewBox="0 0 640 180" preserveAspectRatio="none" style="margin-top:14px; display:block"><line x1="0" y1="45" x2="640" y2="45" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><line x1="0" y1="90" x2="640" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><line x1="0" y1="135" x2="640" y2="135" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><path d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30 L632,180 L0,180 Z" fill="rgba(255,122,41,0.12)"/><path class="cline" pathLength="1" d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="632" cy="30" r="4.5" fill="var(--accent)"/></svg>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--dim); margin-top:8px"><span>fev</span><span>mar</span><span>abr</span><span>mai</span><span>jun</span><span>jul</span></div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr; gap:14px">
+        ${[['Criar post do estoque','Claude monta em 2 minutos','Post na fila'],['Atualizar estoque','34 veículos no estoque.json','Estoque sincronizado'],['Responder leads','3 sem resposta há 2 horas','Abrindo CRM'],['Relatório de julho','pronto para gerar em PDF','Relatório gerado']].map(([t,s,tt])=>`<div class="card" style="padding:18px; cursor:pointer" data-toast="${tt}"><div style="font-size:13px; font-weight:700">${t}</div><div style="margin-top:4px; font-size:11px; color:var(--dim)">${s}</div></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div class="card" style="display:flex; gap:12px; justify-content:space-around; padding:20px">${gauge(78,'META DE VISITAS')}${gauge(42,'GIRO DO ESTOQUE')}</div>
+      <div class="card" style="padding:20px"><div class="lbl">META DO TRIMESTRE</div><div class="num" style="margin-top:10px; font-weight:700; font-size:clamp(19px,1.8vw,24px)">R$ 540.000</div><div style="margin-top:4px; font-size:11px; color:var(--dim)">R$ 331.200 realizados, 61%</div><div style="margin-top:12px; display:flex; gap:8px">${[1,1,1,0,0].map(f=>`<span style="width:10px;height:10px;border-radius:99px;background:${f?'var(--accent)':'rgba(255,255,255,0.12)'}"></span>`).join('')}</div></div>
+      <div class="card" style="padding:20px"><div class="lbl">O QUE PRECISA DE VOCÊ</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px"><div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#EAB308;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">Carrossel do Onix 2020 aguardando sua aprovação</div></div><div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#E5484D;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">2 boletos de fornecedor vencem em 3 dias</div></div></div></div>
+      <div class="card" style="padding:20px"><div class="lbl">LEADS RECENTES</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px"><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Marcos V., Onix 2020</span><span class="num" style="color:var(--dim)">14:52</span></div><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Juliana R., HB20 2022</span><span class="num" style="color:var(--dim)">13:10</span></div><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Pedro A., Compass 2021</span><span class="num" style="color:var(--dim)">11:38</span></div></div></div>
+    </div>
+  </div>`; }
+
+function h2(){ return head('PIERCAR.COM.BR','Meu site')+`
+  <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:18px; max-width:1180px">
+    ${stat('VISITAS, 7 DIAS','1.247','')}${stat('CLIQUES NO WHATSAPP','96','')}
+    <div class="card" style="padding:20px"><div class="lbl">VEÍCULO MAIS VISTO</div><div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Onix 2020<br><span style="font-size:11px; color:var(--dim); font-weight:500">214 visitas</span></div></div>
+    <div class="card" style="padding:20px"><div class="lbl">ÚLTIMA PUBLICAÇÃO</div><div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Hoje, 09:14<br><span style="font-size:11px; color:var(--dim); font-weight:500">estoque sincronizado</span></div></div>
+  </div>
+  <div class="card" style="padding:0; overflow:hidden; max-width:1180px">
+    <div style="display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border)"><span style="width:10px;height:10px;border-radius:99px;background:#E5484D"></span><span style="width:10px;height:10px;border-radius:99px;background:#EAB308"></span><span style="width:10px;height:10px;border-radius:99px;background:#22C55E"></span><div style="flex:1; margin:0 20px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:6px 16px; font-size:11px; color:var(--dim); text-align:center">piercar.com.br</div><button class="obtn" style="padding:6px 14px; font-size:10px" data-toast="Abrindo o site">Abrir</button></div>
+    <div style="background:#0F0C0A">
+      <div style="padding:36px 44px; border-bottom:1px solid var(--border)"><div style="font-size:9px; letter-spacing:.22em; color:var(--accent); font-weight:700">SEMINOVOS SELECIONADOS</div><div style="margin-top:10px; font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.1">Seu próximo carro,<br>revisado e com garantia</div><div style="margin-top:14px; display:flex; gap:10px"><span class="kbtn">Ver estoque</span><span class="obtn">Chamar no WhatsApp</span></div></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:22px 44px 30px">
+        ${[['Onix 1.0 Turbo 2020','R$ 68.900'],['HB20 1.0 2022','R$ 74.500'],['Compass Sport 2021','R$ 129.900']].map(([n,p])=>`<div style="border:1px solid var(--border); border-radius:14px; overflow:hidden"><div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do veículo</div><div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">${n}</div><div class="num" style="font-size:10px; color:var(--accent); margin-top:2px">${p}</div></div></div>`).join('')}
+      </div>
+    </div>
+  </div>`; }
+
+/* --- Instagram with working tabs --- */
+const IG_TABS=[['carrossel','Carrossel'],['post','Post'],['story','Story'],['agendados','Agendados'],['modelos','Modelos'],['metricas','Métricas']];
+function h3(){
+  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">GERADOR DE CONTEÚDO</div><h1>Instagram</h1></div><div style="flex:1"></div>${S.ig==='carrossel'?`<span style="padding:6px 14px; border:1px solid #EAB308; color:#EAB308; border-radius:999px; font-size:8.5px; letter-spacing:.14em; font-weight:700">AGUARDANDO APROVAÇÃO</span><button class="obtn" data-toast="Ajuste solicitado">Pedir ajuste</button><button class="kbtn" data-toast="Carrossel aprovado e agendado">Aprovar e agendar</button>`:''}</div>
+  <div class="divider"></div>
+  <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap">${IG_TABS.map(([id,l])=>`<button class="pill ${S.ig===id?'on':''}" data-ig="${id}">${l}</button>`).join('')}</div>
+  <div class="fadein">${igPanel()}</div>`;
+}
+function igPanel(){
+  if(S.ig==='carrossel') return igCarrossel();
+  if(S.ig==='metricas') return igMetricas();
+  if(S.ig==='modelos') return igModelos();
+  if(S.ig==='agendados') return igAgendados();
+  const t=S.ig==='post'?'post':'story', d=S.ig==='post'?'1080 x 1080':'1080 x 1920';
+  return `<div class="card" style="max-width:1280px; display:grid; place-items:center; min-height:320px; text-align:center"><div style="max-width:40ch"><div style="font-size:14px; font-weight:800; text-transform:capitalize">Criar ${t}</div><div style="margin-top:6px; font-size:12px; color:var(--dim)">Descreva o que quer publicar. O Claude monta no formato ${d} e você aprova.</div><button class="kbtn" style="margin-top:16px" data-toast="Escolha um modelo">Escolher modelo</button></div></div>`;
+}
+function igCarrossel(){
+  const slides=[
+    `<div style="position:relative"><div style="font-size:8px; letter-spacing:.2em; color:var(--accent); font-weight:700">ÚNICO DONO</div><div style="margin-top:6px; font-weight:700; font-size:26px; line-height:1.05">Onix 1.0<br>Turbo</div><div style="margin-top:6px; font-size:10px; color:var(--dim)">2020, 41.320 km</div></div>`,
+    `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto lateral do veículo</div><div style="position:absolute; bottom:14px; left:14px; background:var(--accent); color:#0A0C0A; border-radius:999px; padding:4px 12px; font-size:9px; font-weight:800; letter-spacing:.08em">REVISADO</div>`,
+    `<div style="font-size:8px; letter-spacing:.2em; color:var(--accent); font-weight:700">FICHA</div><div style="margin-top:12px; display:flex; flex-direction:column; gap:9px; font-size:11px"><div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px"><span style="color:var(--dim)">Km</span><span class="num">41.320</span></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px"><span style="color:var(--dim)">Ano</span><span class="num">2020</span></div><div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">Dono</span><span>Único</span></div></div>`,
+    `<div style="font-size:8px; letter-spacing:.2em; font-weight:800; color:#0A0C0A">À VISTA</div><div style="margin-top:4px; font-weight:700; font-size:32px; color:#0A0C0A" class="num">R$ 68.900</div><div style="margin-top:10px; font-size:11px; font-weight:600; color:#0A0C0A">ou 48x de R$ 1.890</div>`,
+    `<div style="text-align:center"><div style="font-weight:700; font-size:22px; line-height:1.2">Ele sai da loja<br>esta semana</div><div style="margin-top:14px; background:var(--accent); color:#0A0C0A; border-radius:999px; padding:8px 18px; font-size:10px; font-weight:800; display:inline-block">Chama no WhatsApp</div></div>`,
+  ];
+  const deck=slides.map((s,i)=>`<div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; background:${i===3?'var(--accent)':'#151110'}; ${i!==3?'border:1px solid var(--border);':''} padding:20px; display:flex; flex-direction:column; ${i===3?'justify-content:center;':'justify-content:flex-end;'} position:relative; overflow:hidden">${i!==3&&i!==1?'<div style="position:absolute; inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 8px, transparent 8px 16px)"></div>':''}${s}<div style="position:absolute; top:12px; right:14px; font-size:9px; ${i===3?'opacity:.6':'color:var(--dim)'}" class="num">${i+1}/5</div></div>`).join('');
+  return `<div style="display:grid; grid-template-columns:380px 1fr; gap:18px; align-items:start; max-width:1280px">
+    <div class="card" style="padding:0; display:flex; flex-direction:column; min-height:560px">
+      <div style="display:flex; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border)"><span style="font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600">NOVA CONVERSA</span><div style="flex:1"></div><span style="font-size:10px; color:var(--dim); font-weight:600; cursor:pointer; margin-right:12px" data-toast="Histórico">Histórico</span><span style="font-size:10px; color:var(--accent); font-weight:700; cursor:pointer" data-toast="Nova conversa">Nova</span></div>
+      <div style="flex:1; padding:18px; display:flex; flex-direction:column; gap:14px">
+        <div style="align-self:flex-end; max-width:85%; background:var(--accent); color:#0A0C0A; border-radius:16px 16px 4px 16px; padding:10px 14px; font-size:12px; line-height:1.5">Cria o carrossel do Onix 2020 que entrou hoje</div>
+        <div style="align-self:flex-start; max-width:92%; display:flex; flex-direction:column; gap:8px"><div style="display:flex; flex-wrap:wrap; gap:6px"><span style="border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:10px; color:var(--dim)"><span style="display:inline-block; width:5px; height:5px; border-radius:99px; background:var(--accent); margin-right:6px"></span>Leu estoque.json, Onix 2020, 41.320 km</span><span style="border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:10px; color:var(--dim)"><span style="display:inline-block; width:5px; height:5px; border-radius:99px; background:var(--accent); margin-right:6px"></span>Aplicou o modelo seminovo-destaque</span></div><div style="background:var(--bg); border:1px solid var(--border); border-radius:4px 16px 16px 16px; padding:12px 14px; font-size:12px; line-height:1.55">Carrossel de 5 slides pronto. Preço e parcela no slide 4, chamada pro WhatsApp no 5.</div></div>
+        <div style="align-self:flex-end; max-width:85%; background:var(--accent); color:#0A0C0A; border-radius:16px 16px 4px 16px; padding:10px 14px; font-size:12px; line-height:1.5">Troca a capa: destaca "único dono"</div>
+        <div style="align-self:flex-start; max-width:92%; background:var(--bg); border:1px solid var(--border); border-radius:4px 16px 16px 16px; padding:12px 14px; font-size:12px; line-height:1.55">Capa atualizada. "Único dono" virou o destaque.</div>
+      </div>
+      <div style="padding:14px 18px; border-top:1px solid var(--border); display:flex; gap:8px; align-items:center"><span style="border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:10px; color:var(--dim)">Modelo</span><input id="igInput" style="flex:1; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:8px 16px; font-size:11px; color:var(--ink); font-family:Montserrat" placeholder="Descreva o ajuste ou peça outro post"><button id="igSend" style="width:32px; height:32px; border-radius:99px; background:var(--accent); color:#0A0C0A; border:0; font-weight:800; font-size:13px; cursor:pointer; flex:none">&#8599;</button></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px; min-width:0">
+      <div style="display:flex; gap:14px; overflow-x:auto; padding-bottom:6px">${deck}<div style="flex:0 0 auto; width:230px; height:230px; border-radius:14px; border:1.5px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--dim); cursor:pointer" data-toast="Slide adicionado">+ Slide</div></div>
+      <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:16px">
+        <div class="card" style="padding:18px"><div class="lbl">RASTRO TÉCNICO</div><div style="margin-top:12px; display:flex; flex-direction:column; gap:9px; font-size:11px">${[['Modelo','Sonnet 4.5'],['Formato','1080 x 1080, 5 slides'],['Render','14s'],['Tokens','12,4k']].map(([a,b])=>`<div style="display:flex; justify-content:space-between"><span style="color:var(--dim)">${a}</span><span class="num">${b}</span></div>`).join('')}</div></div>
+        <div class="card" style="padding:18px"><div class="lbl">LEGENDA GERADA</div><div style="margin-top:10px; font-size:12px; line-height:1.6">Onix 1.0 Turbo 2020, único dono e 41 mil km. Revisado, com garantia e pronto pra rodar. R$ 68.900 à vista ou 48x de R$ 1.890. Chama no WhatsApp que a gente separa ele pra você.</div><div style="margin-top:10px; font-size:11px; color:var(--accent)">#seminovos #onix #piercar #carrosbh</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+function igMetricas(){ return `<div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:18px; max-width:1180px">${stat('SEGUIDORES','4.312','+87 em 30 dias')}${stat('ALCANCE, 30D','28,4k','+14%',true)}${stat('ENGAJAMENTO','3,8%','2x a média do setor')}${stat('POSTS NO MÊS','11','meta de 12')}</div>
+  <div class="card" style="max-width:1180px"><div class="lbl">ALCANCE, ÚLTIMOS 30 DIAS</div><svg width="100%" height="150" viewBox="0 0 640 150" preserveAspectRatio="none" style="margin-top:14px; display:block"><path d="M0,120 L60,110 L120,124 L180,92 L240,102 L300,74 L360,86 L420,58 L480,70 L540,44 L600,52 L632,28 L632,150 L0,150 Z" fill="rgba(255,122,41,0.10)"/><path class="cline" pathLength="1" d="M0,120 L60,110 L120,124 L180,92 L240,102 L300,74 L360,86 L420,58 L480,70 L540,44 L600,52 L632,28" fill="none" stroke="var(--accent)" stroke-width="2"/></svg></div>`; }
+function igModelos(){ return `<div class="card" style="max-width:1180px"><div class="lbl">MODELOS IMPLANTADOS</div><div style="margin-top:6px; font-size:11px; color:var(--dim)">Cada modelo é um HTML versionado no repositório da PierCar</div><div style="margin-top:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px">${['seminovo-destaque','chegou-agora','condição-especial','feirão','depoimento','antes-depois','institucional','financiamento'].map((n,i)=>`<div style="aspect-ratio:4/5; border-radius:12px; border:1px solid ${i===0?'var(--accent)':'var(--border)'}; background:linear-gradient(160deg, rgba(255,122,41,${0.10+i*0.02}), #151110); display:flex; align-items:flex-end; padding:10px; font-size:10px; font-weight:700; cursor:pointer" data-toast="Modelo: ${n}">${n}</div>`).join('')}</div></div>`; }
+function igAgendados(){ return `<div class="card" style="padding:0; overflow:hidden; max-width:1180px"><div class="thead" style="grid-template-columns:2fr 1fr 1fr 1fr"><div>CONTEÚDO</div><div>TIPO</div><div>QUANDO</div><div>STATUS</div></div>${[['Onix 2020, único dono','Carrossel','17/07 18h','AGUARDA','#EAB308'],['Feirão de julho','Post','19/07 09h','AGENDADO','var(--accent)'],['Depoimento, Sr. Antônio','Story','20/07 12h','AGENDADO','var(--accent)'],['HB20 2022','Carrossel','15/07 18h','PUBLICADO','#8A8F98']].map(([c,t,q,s,cc])=>`<div class="trow" style="grid-template-columns:2fr 1fr 1fr 1fr"><div style="font-weight:600">${c}</div><div style="color:var(--dim)">${t}</div><div class="num" style="color:var(--dim)">${q}</div><div><span style="padding:3px 10px; border:1px solid ${cc}; color:${cc}; border-radius:999px; font-size:8px; letter-spacing:.1em; font-weight:700">${s}</span></div></div>`).join('')}</div>`; }
+
+function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Funcionários','Metas','Relatórios','Calculadoras'];
+  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">GESTÃO PRO</div><h1>Agenda</h1></div><div style="flex:1"></div><button class="obtn" data-toast="Anotações">Anotações</button><div class="modesw"><div class="on" style="cursor:default">Semana</div><div style="color:var(--dim)" data-toast="Visão de mês">Mês</div><div style="color:var(--dim)" data-toast="Visão de lista">Lista</div></div><button class="kbtn" data-toast="Novo compromisso">+ Criar</button></div>
+  <div class="divider" style="margin:14px 0 18px"></div>
+  <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap">${gestao.map(g=>`<button class="pill" data-fin="1">${g}</button>`).join('')}<button class="pill on">Agenda</button></div>
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px"><span class="num" style="font-size:13px; font-weight:700">12 jul a 18 jul de 2026</span><button class="obtn" style="padding:4px 12px; font-size:10px" data-toast="Hoje">Hoje</button><div style="flex:1"></div>${[['Tarefa','#5AA9F9'],['Marco','#B08CFF'],['Evento','var(--accent)'],['Vencimento','#EAB308']].map(([l,c])=>`<span style="font-size:10px; color:var(--dim)"><span style="display:inline-block; width:6px; height:6px; border-radius:99px; background:${c}; margin-right:5px"></span>${l}</span>`).join('')}</div>
+  <div style="display:grid; grid-template-columns:1fr 290px; gap:18px; align-items:start">
+    <div class="card" style="padding:0; overflow:hidden">
+      <div style="display:grid; grid-template-columns:46px repeat(7,1fr); border-bottom:1px solid var(--border)"><div></div>${[['DOM',12],['SEG',13],['TER',14],['QUA',15],['QUI',16],['SEX',17,1],['SÁB',18]].map(([w,d,t])=>`<div style="padding:12px 8px; text-align:center; border-left:${t?'2px solid var(--accent)':'1px solid var(--border)'}"><div style="font-size:8.5px; letter-spacing:.12em; color:${t?'var(--accent)':'var(--dim)'}; font-weight:${t?700:600}">${w}</div><div class="num" style="font-size:16px; font-weight:700; margin-top:2px; ${t?'color:var(--accent)':''}">${d}</div></div>`).join('')}</div>
+      <div style="display:grid; grid-template-columns:46px repeat(7,1fr)"><div style="display:flex; flex-direction:column; font-size:9px; color:var(--dim)">${['07h','08h','09h','10h','11h','12h','13h','14h','15h','16h'].map(h=>`<div style="height:44px; padding:4px 6px 0; text-align:right">${h}</div>`).join('')}</div>
+        ${[0,1,2,3].map(()=>`<div style="height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"></div>`).join('')}
+        <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"><div style="position:absolute; top:310px; left:4px; right:4px; border-left:3px solid #EAB308; background:rgba(234,179,8,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Pagamento fornecedor TechParts<div style="color:var(--dim); margin-top:1px">14:00</div></div></div>
+        <div style="position:relative; height:440px; border-left:2px solid var(--accent); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"><div style="position:absolute; top:2px; left:4px; right:4px; border-left:3px solid #5AA9F9; background:rgba(90,169,249,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Revisar relatório financeiro<div style="color:var(--dim); margin-top:1px">07:00</div></div><div style="position:absolute; top:178px; left:4px; right:4px; border-left:3px solid var(--accent); background:rgba(255,255,255,0.05); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Reunião de alinhamento<div style="color:var(--dim); margin-top:1px">11:00</div></div></div>
+        <div style="position:relative; height:440px; border-left:1px solid var(--border); background:repeating-linear-gradient(to bottom, transparent 0 43px, var(--border) 43px 44px)"><div style="position:absolute; top:2px; left:4px; right:4px; border-left:3px solid #B08CFF; background:rgba(176,140,255,0.10); border-radius:6px; padding:5px 7px; font-size:9px; line-height:1.35">Entrega do planejamento Q2<div style="color:var(--dim); margin-top:1px">07:00</div></div></div>
+      </div>
+    </div>
+    <div class="card" style="padding:20px"><div style="font-size:13px; font-weight:700">Resumo</div>
+      ${[['ATRASADOS (2)','#E5484D',[['Enviar notas fiscais pendentes','Tarefa, 07:00','#5AA9F9'],['Pagamento FGTS atrasado','Vencimento, 07:00','#EAB308']]],['HOJE (3)','var(--accent)',[['Revisar relatório financeiro','Tarefa, 07:00','#5AA9F9'],['Reunião de alinhamento','Evento, 11:00','var(--accent)'],['Pagamento fornecedor','Vencimento, 14:00','#EAB308']]],['PRÓXIMOS 7 DIAS (4)','var(--dim)',[['Entrega do planejamento Q2','Marco, sáb 07:00','#B08CFF'],['Onboarding, Lucas Ferreira','RH, seg 06:00','var(--accent)'],['Gerar relatório de caixa','Relatório, ter 05:00','#5AA9F9']]]].map(([t,c,items])=>`<div style="margin-top:16px"><div style="font-size:9px; letter-spacing:.16em; color:${c}; font-weight:700">${t}</div><div style="margin-top:10px; display:flex; flex-direction:column; gap:10px">${items.map(([n,s,dc])=>`<div style="display:flex; gap:9px"><span style="width:6px; height:6px; border-radius:99px; background:${dc}; margin-top:5px; flex:none"></span><div><div style="font-size:11px; font-weight:600">${n}</div><div style="font-size:9.5px; color:var(--dim); margin-top:1px">${s}</div></div></div>`).join('')}</div></div>`).join('')}
+    </div>
+  </div>`; }
+
+function h6(){ return head('ASSENTO TEAM, CONTA DA EM DIGITAL','Claude')+`
+  <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:18px; max-width:1180px">${stat('EXECUÇÕES NO MÊS','47','')}${stat('TOKENS NO CICLO','318,1k','')}${stat('USO DO TETO','12%','')}${stat('SKILLS INSTALADAS','6','')}</div>
+  <div class="grid" style="grid-template-columns:1.5fr 1fr; max-width:1180px">
+    <div class="card"><div class="lbl">ÚLTIMAS EXECUÇÕES</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">
+      ${[['/carrossel','Onix 2020, 5 slides, aguardando aprovação','12,4k','hoje 14:32'],['/relatorio-ads','semana 28, entregue no WhatsApp','8,1k','ontem 09:05'],['/seo','3 páginas de veículo atualizadas','5,7k','14/07 16:40']].map((r,i)=>`<div style="display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:baseline; ${i<2?'border-bottom:1px solid var(--border); padding-bottom:12px':''}"><span class="mono" style="font-size:11.5px; color:var(--accent)">${r[0]}</span><span style="font-size:11px; color:var(--dim)">${r[1]}</span><span class="num" style="font-size:10.5px">${r[2]}</span><span class="num" style="font-size:10px; color:var(--dim)">${r[3]}</span></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="lbl">CONTEXTO INSTALADO</div><div style="margin-top:6px; font-size:11px; color:var(--dim)">O que o Claude sabe sobre a PierCar</div><div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:7px">${['estoque.json','tom-de-voz.md','seminovo-destaque','tabela-financiamento','relatorio-ads','seo-veiculos'].map(c=>`<span class="chip">${c}</span>`).join('')}</div><div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim)">Atualizado hoje às 09:14, junto com o estoque</div></div>
+  </div>`; }
+
+function h7(){ const mods=[['Meu site','aba do site e métricas',1],['Instagram','gerador de conteúdo e biblioteca',1],['Financeiro','painel de caixa e faturas',1],['CRM','funil de vendas e WhatsApp',1]];
+  return head('HUB DA PIERCAR','Configurações').replace('style="','style="max-width:900px;')+`
+  <div class="card" style="margin-bottom:18px; max-width:900px"><div class="lbl">MÓDULOS</div><div style="margin-top:6px; font-size:11px; color:var(--dim)">Abas desligadas somem do hub. Dá pra religar aqui a qualquer momento.</div>
+    <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px">${mods.map(([n,d,on],i)=>`<div style="border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px"><div style="flex:1"><div style="font-size:12.5px; font-weight:700">${n}</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">${d}</div></div><div class="tgl ${on?'on':''}" data-tgl="${i}" style="width:36px; height:20px; border-radius:999px; background:${on?'var(--accent)':'rgba(255,255,255,0.12)'}; position:relative; cursor:pointer"><span style="position:absolute; top:2px; ${on?'right:2px':'left:2px'}; width:16px; height:16px; border-radius:99px; background:${on?'#0A0C0A':'#F4F6F3'}"></span></div></div>`).join('')}</div>
+  </div>
+  <div class="card" style="max-width:900px"><div class="lbl">INTEGRAÇÕES</div><div style="margin-top:16px; display:flex; flex-direction:column; gap:12px">
+    ${[['Instagram API','@piercar.multimarcas, 4.312 seguidores',1],['WhatsApp Business','recebe leads e relatórios',1],['Google Analytics','métricas do piercar.com.br',0]].map(([n,d,c])=>`<div style="display:flex; align-items:center; gap:12px; ${c?'border-bottom:1px solid var(--border); padding-bottom:12px':''}"><div style="flex:1"><div style="font-size:12px; font-weight:600">${n}</div><div style="font-size:10.5px; color:var(--dim); margin-top:2px">${d}</div></div>${c?'<span style="padding:4px 12px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; font-size:8.5px; letter-spacing:.14em; font-weight:700">CONECTADA</span>':'<button class="obtn" style="padding:6px 16px" data-toast="Conectando Google Analytics">Conectar</button>'}</div>`).join('')}
+  </div></div>`; }
+
+/* ---------- CRM (subsections + kanban drag) ---------- */
+const CRM_TABS=[['funil','Funil'],['conversas','Conversas'],['leads','Leads'],['metricas','Métricas']];
+const AV=(n,c,sz=26)=>`<span class="av" style="width:${sz}px;height:${sz}px;background:${c}">${n.split(' ').map(w=>w[0]).slice(0,2).join('')}</span>`;
+const LEADS=[
+  {id:1,n:'Marcos Vinícius',car:'Onix 2020',v:68900,src:'Instagram',stage:0,c:'#6366F1',t:'12 min'},
+  {id:2,n:'Patrícia Rocha',car:'Kwid 2022',v:52000,src:'Meta Ads',stage:0,c:'#DB2777',t:'3 h'},
+  {id:3,n:'Fernanda Melo',car:'Argo 2021',v:64000,src:'Instagram',stage:0,c:'#4F46E5',t:'4 h'},
+  {id:4,n:'Juliana Prado',car:'i30 2019',v:74900,src:'WhatsApp',stage:1,c:'#2563EB',t:'2 h'},
+  {id:5,n:'Antônio Lima',car:'Punto 2016',v:38500,src:'Site',stage:1,c:'#16A34A',t:'5 h'},
+  {id:6,n:'Bruno Castro',car:'T-Cross 2020',v:118000,src:'WhatsApp',stage:1,c:'#EA580C',t:'6 h'},
+  {id:7,n:'Carla Souza',car:'HB20 2021',v:72000,src:'Meta Ads',stage:2,c:'#D97706',t:'Sáb 10h'},
+  {id:8,n:'Rafael Dias',car:'Corolla 2018',v:98000,src:'Instagram',stage:2,c:'#DC2626',t:'Seg 14h'},
+  {id:9,n:'Beatriz Nunes',car:'Onix 2020',v:68900,src:'WhatsApp',stage:3,c:'#7C3AED',t:'2 d'},
+  {id:10,n:'Diego Alves',car:'Renegade 2019',v:112000,src:'Site',stage:3,c:'#0891B2',t:'2 d'},
+  {id:11,n:'Sr. Eduardo',car:'Compass 2020',v:135000,src:'Indicação',stage:4,c:'#059669',t:'Vendido'},
+  {id:12,n:'Larissa Pinto',car:'Onix 2019',v:61000,src:'Site',stage:4,c:'#9333EA',t:'Vendido'},
+];
+const CRM_STAGES=[['Novo lead','var(--dim)'],['Em contato','#5AA9F9'],['Test drive','var(--accent)'],['Proposta','#B08CFF'],['Fechado','#22C55E']];
+const brl0=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+function crmScreen(){
+  return `<div style="display:flex; align-items:center; gap:14px"><div><div class="eyebrow">FUNIL DE VENDAS</div><h1>CRM</h1></div><div style="flex:1"></div><button class="obtn" data-toast="Filtro de vendedores">Todos os vendedores</button><button class="kbtn" data-toast="Cadastro de lead">+ Novo lead</button></div>
+  <div class="divider"></div>
+  <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap">${CRM_TABS.map(([id,l])=>`<button class="pill ${S.crm===id?'on':''}" data-crm="${id}">${l}</button>`).join('')}</div>
+  <div class="fadein" id="crmPanel">${crmPanel()}</div>`;
+}
+function crmPanel(){ if(S.crm==='conversas') return crmConversas(); if(S.crm==='leads') return crmLeads(); if(S.crm==='metricas') return crmMetricas(); return crmFunil(); }
+function crmFunil(){
+  return `<div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:22px; max-width:1180px">${stat('LEADS NO FUNIL','14','R$ 782.400 em potencial')}${stat('TEST DRIVES','3','agendados esta semana')}${stat('FECHADOS NO MÊS','6','R$ 384.200 em vendas',true)}${stat('CONVERSÃO','18,5%','lead até a venda')}</div>
+  <div class="board" id="board">${CRM_STAGES.map((s,si)=>{const items=LEADS.filter(l=>l.stage===si);const sum=items.reduce((a,l)=>a+l.v,0);return `<div class="col"><div class="ch"><span class="dt" style="background:${s[1]}"></span><b>${s[0]}</b><span class="n">${items.length}</span></div><div style="font-size:10px; color:var(--dim); margin:-6px 0 10px 16px">${brl0(sum)}</div><div class="dz" data-stage="${si}">${items.map(leadCard).join('')}</div></div>`;}).join('')}</div>`;
+}
+function leadCard(l){ return `<div class="lead" draggable="true" data-id="${l.id}"><div class="lt">${AV(l.n,l.c)}<div><div class="nm">${l.n}</div><div class="cr">${l.car}</div></div></div><div class="val num">${brl0(l.v)}</div><div class="lb"><span class="chip" style="padding:2px 8px; font-size:9px">${l.src}</span><span style="margin-left:auto; font-size:9px; color:${l.stage===4?'#22C55E':'var(--dim)'}; ${l.stage===4?'font-weight:700':''}">${l.t}</span></div></div>`; }
+const CONV=[
+  {id:1,n:'Marcos Vinícius',c:'#6366F1',last:'Tem como ver hoje à tarde?',t:'12 min',u:2,msgs:[['Oi, vi o Onix 2020 no Instagram, ainda tá disponível?','them','10:02'],['Tá sim, único dono e 41 mil km. Quer agendar um test drive?','me','10:05'],['Quero! Qual o valor à vista?','them','10:12'],['R$ 68.900 à vista ou 48x de R$ 1.890.','me','10:13'],['Tem como ver hoje à tarde?','them','10:20']]},
+  {id:2,n:'Bruno Castro',c:'#EA580C',last:'Manda a ficha do T-Cross',t:'6 h',u:1,msgs:[['Oi, tenho interesse no T-Cross 2020','them','09:15'],['Ótima escolha. Quer a ficha completa?','me','09:20'],['Manda a ficha do T-Cross','them','09:22']]},
+  {id:3,n:'Juliana Prado',c:'#2563EB',last:'Perfeito, obrigada!',t:'2 h',u:0,msgs:[['Bom dia, o i30 2019 aceita troca?','them','08:30'],['Aceita sim. Qual carro você tem hoje?','me','08:41'],['Um HB20 2017.','them','08:44'],['Dá pra avaliar aqui na loja.','me','08:45'],['Perfeito, obrigada!','them','08:50']]},
+  {id:4,n:'Antônio Lima',c:'#16A34A',last:'Vou pensar e te falo.',t:'5 h',u:0,msgs:[['O Punto 2016 ainda está por R$ 38.500?','them','14:10'],['Está sim. Quer condições de financiamento?','me','14:22'],['Vou pensar e te falo.','them','14:30']]},
+];
+let curConv=1;
+function crmConversas(){ const c=CONV.find(x=>x.id===curConv);
+  return `<div class="wabox" style="max-width:1180px"><div class="walist" id="walist">${CONV.map(cv=>`<div class="wc ${cv.id===curConv?'on':''}" data-conv="${cv.id}">${AV(cv.n,cv.c,36)}<div class="tx"><b>${cv.n}</b><s>${cv.last}</s></div><div class="rt"><div class="t">${cv.t}</div>${cv.u?`<span class="b">${cv.u}</span>`:''}</div></div>`).join('')}</div>
+  <div class="wthread"><div class="whead">${AV(c.n,c.c,34)}<div><b style="font-size:13px">${c.n}</b><s style="font-size:11px; color:#22C55E">online</s></div><button class="obtn" style="margin-left:auto; padding:6px 14px" data-toast="Ligando para ${c.n}">Ligar</button></div>
+  <div class="wmsgs" id="wmsgs">${c.msgs.map(([t,w,tm])=>`<div class="wm ${w}">${t}<div class="t">${tm}</div></div>`).join('')}</div>
+  <div class="wain"><input id="waInput" placeholder="Escreva uma mensagem..."><button id="waSend">&#8599;</button></div></div></div>`; }
+function crmLeads(){ return `<div class="card" style="padding:0; overflow:hidden; max-width:1180px"><div class="thead" style="grid-template-columns:1.6fr 1fr 1fr 1fr .9fr"><div>LEAD</div><div>INTERESSE</div><div>ORIGEM</div><div>ETAPA</div><div>POTENCIAL</div></div>${LEADS.map(l=>`<div class="trow" style="grid-template-columns:1.6fr 1fr 1fr 1fr .9fr; align-items:center"><div style="display:flex; align-items:center; gap:9px">${AV(l.n,l.c)}<b style="font-size:12px">${l.n}</b></div><div style="color:var(--dim)">${l.car}</div><div><span class="chip" style="padding:3px 9px; font-size:9px">${l.src}</span></div><div><span style="font-size:9px; color:${CRM_STAGES[l.stage][1]}; border:1px solid ${CRM_STAGES[l.stage][1]}; border-radius:999px; padding:3px 9px; font-weight:600">${CRM_STAGES[l.stage][0]}</span></div><div class="num" style="font-weight:600">${brl0(l.v)}</div></div>`).join('')}</div>`; }
+function crmMetricas(){ const fn=[['Leads',132,'100%'],['Contato',98,'74%'],['Test drive',54,'41%'],['Proposta',31,'23%'],['Fechado',24,'18%']];
+  return `<div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:18px; max-width:1180px">${stat('LEADS NO MÊS','132','+18% vs. mês anterior')}${stat('CONVERSÃO','18,5%','lead até a venda',true)}${stat('TICKET MÉDIO','R$ 64.033','por veículo')}${stat('TEMPO DE RESPOSTA','7 min','no 1º contato')}</div>
+  <div class="grid" style="grid-template-columns:1fr 1fr; max-width:1180px"><div class="card"><div class="lbl">FUNIL DE CONVERSÃO</div><div style="margin-top:16px; display:flex; flex-direction:column; gap:9px">${fn.map(([n,v,p],i)=>`<div style="display:flex; align-items:center; gap:12px"><span style="width:80px; font-size:11px; color:var(--dim)">${n}</span><div style="flex:1; height:28px; border-radius:8px; background:var(--accent); width:${p}; opacity:${1-i*0.13}; display:flex; align-items:center; padding:0 12px; color:#0A0C0A; font-size:11px; font-weight:700">${v}</div><span class="num" style="font-size:11px; color:var(--dim); width:40px; text-align:right">${p}</span></div>`).join('')}</div></div>
+  <div class="card"><div class="lbl">ORIGEM DOS LEADS</div><div style="margin-top:16px; display:flex; flex-direction:column; gap:11px">${[['Instagram',34,'#6366F1'],['WhatsApp',26,'#22C55E'],['Meta Ads',22,'#5AA9F9'],['Site',12,'var(--accent)'],['Indicação',6,'#B08CFF']].map(([n,v,c])=>`<div><div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px"><span style="color:var(--dim)"><span style="display:inline-block; width:8px; height:8px; border-radius:3px; background:${c}; margin-right:7px"></span>${n}</span><span class="num" style="font-weight:600">${v}%</span></div><div style="height:6px; border-radius:99px; background:rgba(255,255,255,0.06)"><div style="height:6px; border-radius:99px; background:${c}; width:${v*2.6}%"></div></div></div>`).join('')}</div></div></div>`; }
+
+/* ---------- router ---------- */
+const SCREENS={c1,c2,c3,c4,c5,h1,h2,h3,h5,h6,h7,hcrm:crmScreen};
+function renderScreen(){
+  if(S.screen==='h4'){ window.location.href='financeiro.html'; return; }
+  const fn=SCREENS[S.screen]; $('screen').innerHTML = fn?fn():'';
+  $('screen').classList.remove('fadein'); void $('screen').offsetWidth; $('screen').classList.add('fadein');
+  if(S.screen==='hcrm' && S.crm==='funil') wireDnd();
+  if(S.screen==='hcrm' && S.crm==='conversas') wireConv();
+}
+function render(){ document.body.dataset.mode=S.mode; renderShell(); renderScreen(); }
+
+/* ---------- interactions ---------- */
+function wireDnd(){ let dragId=null; const b=$('board'); if(!b)return;
+  b.querySelectorAll('.lead').forEach(el=>{ el.addEventListener('dragstart',()=>{dragId=+el.dataset.id;el.classList.add('drag');}); el.addEventListener('dragend',()=>{el.classList.remove('drag');b.querySelectorAll('.dz').forEach(z=>z.classList.remove('drop'));}); });
+  b.querySelectorAll('.dz').forEach(z=>{ z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drop');}); z.addEventListener('dragleave',()=>z.classList.remove('drop')); z.addEventListener('drop',e=>{e.preventDefault();const l=LEADS.find(x=>x.id===dragId);if(l){const to=+z.dataset.stage;if(l.stage!==to){l.stage=to;$('crmPanel').innerHTML=crmFunil();wireDnd();toast(l.n+' → '+CRM_STAGES[to][0]);}}}); });
+}
+function wireConv(){ const w=$('walist'); if(!w)return;
+  w.addEventListener('click',e=>{const c=e.target.closest('[data-conv]');if(c){curConv=+c.dataset.conv;const cv=CONV.find(x=>x.id===curConv);cv.u=0;$('crmPanel').innerHTML=crmConversas();wireConv();}});
+  const send=()=>{const i=$('waInput');if(!i)return;const v=i.value.trim();if(!v)return;const c=CONV.find(x=>x.id===curConv);c.msgs.push([v,'me','agora']);c.last='Você: '+v;$('crmPanel').innerHTML=crmConversas();wireConv();};
+  $('waSend').onclick=send; $('waInput').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+}
+
+document.addEventListener('click',e=>{
+  const nav=e.target.closest('[data-nav]'); if(nav){ S.screen=nav.dataset.nav; render(); return; }
+  const md=e.target.closest('[data-mode]'); if(md){ S.mode=md.dataset.mode; S.screen=S.mode==='console'?'c1':'h1'; render(); return; }
+  const ig=e.target.closest('[data-ig]'); if(ig){ S.ig=ig.dataset.ig; renderScreen(); return; }
+  const cr=e.target.closest('[data-crm]'); if(cr){ S.crm=cr.dataset.crm; renderScreen(); return; }
+  const fin=e.target.closest('[data-fin]'); if(fin){ window.location.href='financeiro.html'; return; }
+  const fc=e.target.closest('[data-fchip]'); if(fc){ fc.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on')); fc.classList.add('on'); return; }
+  const tg=e.target.closest('[data-tgl]'); if(tg){ const on=!tg.classList.contains('on'); tg.classList.toggle('on'); tg.style.background=on?'var(--accent)':'rgba(255,255,255,0.12)'; tg.innerHTML=`<span style="position:absolute; top:2px; ${on?'right:2px':'left:2px'}; width:16px; height:16px; border-radius:99px; background:${on?'#0A0C0A':'#F4F6F3'}"></span>`; return; }
+  const t=e.target.closest('[data-toast]'); if(t){ toast(t.dataset.toast); return; }
+  const igs=e.target.closest('#igSend'); if(igs){ const i=$('igInput'); if(i&&i.value.trim()){ toast('Claude está gerando o ajuste'); i.value=''; } return; }
+});
+
+render();
+</script>
+</body>
+</html>
