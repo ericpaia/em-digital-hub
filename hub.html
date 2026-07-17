@@ -293,22 +293,28 @@ function c1(){ return head('TEMPO REAL','Visão geral')+`
     </div>
   </div>`; }
 
-function c2(){ return head('6 CONTAS','Clientes')+`
+function c2(){
+  const clients=WORKSPACES.filter(w=>w.kind==='client');
+  const stMap=s=> s==='active'?['ATIVO','var(--accent)'] : s==='setup'?['CONFIGURANDO','#8A8F98'] : [String(s||'').toUpperCase()||'—','#8A8F98'];
+  const rows = clients.length ? clients.map(w=>{
+    const st=stMap(w.status), cor=w.brand_color||'#FF7A29';
+    const ig = w.instagram ? `<a href="https://instagram.com/${w.instagram}" target="_blank" rel="noopener" style="color:var(--accent)">@${w.instagram}</a>` : '<span style="color:var(--dim)">—</span>';
+    return `<div class="trow" style="grid-template-columns:2.1fr 1.4fr 1.4fr .9fr .9fr">
+      <div style="display:flex; align-items:center; gap:11px; min-width:0"><div class="cavatar" style="width:30px;height:30px;background:${cor}">${initials(w.name)}</div><div style="min-width:0"><div style="font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${w.name}</div><div style="font-size:10px; color:var(--dim)">${w.slug}</div></div></div>
+      <div style="font-size:11px; color:var(--dim)">${w.plan||'—'}</div>
+      <div style="font-size:11px">${ig}</div>
+      <div><button class="obtn" style="padding:5px 12px; font-size:10px" data-openhub="${w.id}">Abrir hub</button></div>
+      <div><span style="padding:4px 11px; border:1px solid ${st[1]}; color:${st[1]}; border-radius:999px; font-size:8.5px; letter-spacing:.12em; font-weight:700; white-space:nowrap; display:inline-block">${st[0]}</span></div>
+    </div>`;
+  }).join('') : `<div class="trow" style="grid-template-columns:1fr"><div style="color:var(--dim); padding:8px">Nenhum cliente cadastrado ainda.</div></div>`;
+  return head(clients.length+' CONTAS','Clientes')+`
   <div style="display:flex; gap:12px; margin-bottom:18px; max-width:1180px">
-    <div style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:10px 18px; font-size:12px; color:var(--dim)">Buscar por nome, slug ou domínio</div>
-    <button class="obtn" data-toast="Filtro de status">Todos os status</button>
+    <div style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:10px 18px; font-size:12px; color:var(--dim)">Buscar por nome ou slug</div>
     <button class="kbtn" data-toast="Cadastro de novo cliente">Novo cliente</button>
   </div>
   <div class="card" style="padding:0; overflow:hidden; max-width:1180px">
-    <div class="thead" style="grid-template-columns:2.1fr 1.5fr 1.1fr .8fr 1.2fr .9fr"><div>CLIENTE</div><div>MÓDULOS</div><div>CONEXÃO CLAUDE</div><div>CUSTO</div><div>TETO</div><div>STATUS</div></div>
-    ${CLIENTES.map(c=>`<div class="trow" style="grid-template-columns:2.1fr 1.5fr 1.1fr .8fr 1.2fr .9fr">
-      <div style="display:flex; align-items:center; gap:11px; min-width:0"><div class="cavatar" style="width:30px;height:30px;background:${c.cor}">${c.ini}</div><div style="min-width:0"><div style="font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${c.nome}</div><div style="font-size:10px; color:var(--dim)">${c.slug}</div></div></div>
-      <div style="display:flex; gap:5px; flex-wrap:wrap">${c.mod.map(m=>`<span class="chip" style="padding:3px 9px; font-size:9.5px">${m}</span>`).join('')||'<span style="color:var(--dim); font-size:10px">,</span>'}</div>
-      <div style="font-size:11px; color:var(--dim)">${c.cx}</div>
-      <div class="num" style="font-size:11.5px; white-space:nowrap">${c.custo}</div>
-      <div style="display:flex; align-items:center; gap:8px"><div style="flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,0.06)"><div style="height:5px; border-radius:99px; background:${c.usoc}; width:${c.uso}"></div></div><span class="num" style="font-size:10.5px; color:var(--dim)">${c.uso}</span></div>
-      <div><span style="padding:4px 11px; border:1px solid ${c.stc}; color:${c.stc}; border-radius:999px; font-size:8.5px; letter-spacing:.12em; font-weight:700; white-space:nowrap; display:inline-block">${c.st}</span></div>
-    </div>`).join('')}
+    <div class="thead" style="grid-template-columns:2.1fr 1.4fr 1.4fr .9fr .9fr"><div>CLIENTE</div><div>PLANO</div><div>INSTAGRAM</div><div>HUB</div><div>STATUS</div></div>
+    ${rows}
   </div>`; }
 
 function acctCard(letter,nome,sub,cli,j5,sem,btn){ return `<div class="card" style="padding:24px">
@@ -362,10 +368,12 @@ function c5(){ return head('CONSUMO DE TOKENS','Tokens').replace('<div class="di
   </div>`; }
 
 /* ---------- HUB screens ---------- */
-function h1(){ return head('SEU NEGÓCIO HOJE','Visão geral')+`
+function h1(){
+  const total=LEADS.length, ativos=LEADS.filter(l=>l.stage>0&&l.stage<4).length, fechados=LEADS.filter(l=>l.stage===4).length, potential=LEADS.reduce((a,l)=>a+l.v,0);
+  return head('SEU NEGÓCIO HOJE','Visão geral')+`
   <div class="grid" style="grid-template-columns:2fr 1fr; align-items:start; max-width:1180px">
     <div style="display:flex; flex-direction:column; gap:18px">
-      <div class="grid" style="grid-template-columns:repeat(3,1fr)">${stat('ESTOQUE','34','veículos anunciados')}${stat('VISITAS AO SITE','1.247','últimos 7 dias')}${stat('LEADS NO WHATSAPP','18','3 aguardando resposta',true)}</div>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr)">${stat('LEADS NO FUNIL',total,brl0(potential)+' em potencial')}${stat('EM NEGOCIAÇÃO',ativos,'em etapas ativas')}${stat('FECHADOS',fechados,'negócios ganhos',true)}</div>
       <div class="card"><div style="display:flex; justify-content:space-between; align-items:baseline"><div><div class="lbl">FATURAMENTO</div><div style="margin-top:4px; font-size:14px; font-weight:700">Últimos 6 meses</div></div><div class="num" style="font-weight:700; font-size:22px">R$ 186.400 <span style="font-size:10px; color:var(--dim); font-weight:500">em julho</span></div></div>
         <svg width="100%" height="180" viewBox="0 0 640 180" preserveAspectRatio="none" style="margin-top:14px; display:block"><line x1="0" y1="45" x2="640" y2="45" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><line x1="0" y1="90" x2="640" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><line x1="0" y1="135" x2="640" y2="135" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7"/><path d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30 L632,180 L0,180 Z" fill="rgba(255,122,41,0.12)"/><path class="cline" pathLength="1" d="M0,128 L128,104 L256,114 L384,82 L512,60 L632,30" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="632" cy="30" r="4.5" fill="var(--accent)"/></svg>
         <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--dim); margin-top:8px"><span>fev</span><span>mar</span><span>abr</span><span>mai</span><span>jun</span><span>jul</span></div>
@@ -378,7 +386,7 @@ function h1(){ return head('SEU NEGÓCIO HOJE','Visão geral')+`
       <div class="card" style="display:flex; gap:12px; justify-content:space-around; padding:20px">${gauge(78,'META DE VISITAS')}${gauge(42,'GIRO DO ESTOQUE')}</div>
       <div class="card" style="padding:20px"><div class="lbl">META DO TRIMESTRE</div><div class="num" style="margin-top:10px; font-weight:700; font-size:clamp(19px,1.8vw,24px)">R$ 540.000</div><div style="margin-top:4px; font-size:11px; color:var(--dim)">R$ 331.200 realizados, 61%</div><div style="margin-top:12px; display:flex; gap:8px">${[1,1,1,0,0].map(f=>`<span style="width:10px;height:10px;border-radius:99px;background:${f?'var(--accent)':'rgba(255,255,255,0.12)'}"></span>`).join('')}</div></div>
       <div class="card" style="padding:20px"><div class="lbl">O QUE PRECISA DE VOCÊ</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px"><div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#EAB308;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">Carrossel do Onix 2020 aguardando sua aprovação</div></div><div style="display:flex; gap:10px"><span style="width:7px;height:7px;border-radius:99px;background:#E5484D;margin-top:4px;flex:none"></span><div style="font-size:11.5px;line-height:1.45">2 boletos de fornecedor vencem em 3 dias</div></div></div></div>
-      <div class="card" style="padding:20px"><div class="lbl">LEADS RECENTES</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px"><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Marcos V., Onix 2020</span><span class="num" style="color:var(--dim)">14:52</span></div><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Juliana R., HB20 2022</span><span class="num" style="color:var(--dim)">13:10</span></div><div style="display:flex; justify-content:space-between; font-size:11.5px"><span>Pedro A., Compass 2021</span><span class="num" style="color:var(--dim)">11:38</span></div></div></div>
+      <div class="card" style="padding:20px"><div class="lbl">LEADS RECENTES</div><div style="margin-top:14px; display:flex; flex-direction:column; gap:12px">${LEADS.slice(0,3).map(l=>`<div style="display:flex; justify-content:space-between; font-size:11.5px"><span>${l.n}${l.car?', '+l.car:''}</span><span class="num" style="color:var(--dim)">${l.t||''}</span></div>`).join('')||'<div style="color:var(--dim); font-size:11px">Sem leads ainda</div>'}</div></div>
     </div>
   </div>`; }
 
@@ -597,6 +605,7 @@ document.addEventListener('click',e=>{
   const fin=e.target.closest('[data-fin]'); if(fin){ window.location.href='financeiro.html'; return; }
   const nl=e.target.closest('[data-newlead]'); if(nl){ newLead(); return; }
   const lo=e.target.closest('[data-logout]'); if(lo){ logout(); return; }
+  const oh=e.target.closest('[data-openhub]'); if(oh){ S.wsId=oh.dataset.openhub; localStorage.setItem('emhub_ws',S.wsId); (async()=>{ await loadWorkspaceLeads(S.wsId); S.mode='hub'; S.screen='h1'; render(); })(); return; }
   const igo=e.target.closest('[data-igopen]'); if(igo){ window.open(igo.dataset.igopen,'_blank','noopener'); return; }
   const igp=e.target.closest('[data-igprofile]'); if(igp){ const ws=activeWs(); if(ws&&ws.instagram){ window.open('https://instagram.com/'+ws.instagram,'_blank','noopener'); } else { S.ig='perfil'; renderScreen(); } return; }
   const ihs=e.target.closest('[data-ighandle-save]'); if(ihs){ const i=$('igHandle'); saveIgHandle(i&&i.value); return; }
