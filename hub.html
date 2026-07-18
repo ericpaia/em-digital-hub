@@ -283,7 +283,8 @@ function tplCard(x){ const m=FMT_META[x.format]||FMT_META.post; const fav=TPL_FA
       <button class="tplstar ${fav?'on':''}" data-favtpl="${x.id}" title="Favoritar">★</button>
       <div class="tplactions">
         <button class="kbtn" data-usetpl="${x.id}">Usar modelo</button>
-        <button class="obtn" data-edittpl="${x.id}">Editar</button>
+        <button class="obtn" data-edithub="${x.id}">Editar no Hub</button>
+        <button class="obtn" data-editcanva="${x.id}">Editar no Canva</button>
         <button class="obtn" data-viewtpl="${x.id}">Visualizar</button>
         <button class="obtn" data-deploytpl="${x.id}">${dep?'Remover':'Implantar'}</button>
       </div>
@@ -345,7 +346,7 @@ async function canvaDisconnect(){ const ws=activeWs(); if(!ws) return;
 function renderModal(html){ let m=$('hubModal'); if(!m){ m=document.createElement('div'); m.className='hmodal'; m.id='hubModal'; document.body.appendChild(m); } m.innerHTML=html; m.hidden=false; }
 function closeModal(){ const m=$('hubModal'); if(m) m.hidden=true; }
 function openTplPreview(id){ const x=TEMPLATES.find(t=>t.id===id); if(!x) return; const m=FMT_META[x.format]||FMT_META.post;
-  renderModal(`<div class="hmback" data-modalclose></div><div class="hmbox"><div class="hmhead"><div><b>${esc(x.title)}</b><div style="font-size:11px;color:var(--dim);margin-top:2px">${m.label} · ${m.dim}${x.format==='carrossel'?` · ${x.page_count||1} páginas`:''}${x.niche?` · ${esc(x.niche)}`:''}</div></div><button class="obtn" data-modalclose>Fechar</button></div><div class="hmart" style="aspect-ratio:${m.ar}">${tplArt(x)}</div><div class="hmfoot"><button class="kbtn" data-usetpl="${x.id}">Usar este modelo</button><button class="obtn" data-edittpl="${x.id}">Editar modelo</button></div></div>`);
+  renderModal(`<div class="hmback" data-modalclose></div><div class="hmbox"><div class="hmhead"><div><b>${esc(x.title)}</b><div style="font-size:11px;color:var(--dim);margin-top:2px">${m.label} · ${m.dim}${x.format==='carrossel'?` · ${x.page_count||1} páginas`:''}${x.niche?` · ${esc(x.niche)}`:''}</div></div><button class="obtn" data-modalclose>Fechar</button></div><div class="hmart" style="aspect-ratio:${m.ar}">${tplArt(x)}</div><div class="hmfoot"><button class="kbtn" data-edithub="${x.id}">Editar no Hub</button><button class="obtn" data-editcanva="${x.id}">Editar no Canva</button><button class="obtn" data-usetpl="${x.id}">Usar este modelo</button></div></div>`);
 }
 function openImport(){ renderModal(`<div class="hmback" data-modalclose></div><div class="hmbox" style="width:min(440px,100%)"><div class="hmhead"><b>Importar modelo</b><button class="obtn" data-modalclose>Fechar</button></div><div style="display:flex;flex-direction:column;gap:10px"><input class="tin" id="impTitle" placeholder="Nome do modelo"><select class="tin" id="impFormat"><option value="post">Post — 1080 × 1080</option><option value="carrossel">Carrossel — 1080 × 1350</option><option value="story">Story — 1080 × 1920</option></select><input class="tin" id="impNiche" placeholder="Nicho (ex.: Estética)"><input class="tin" id="impTags" placeholder="Tags separadas por vírgula"><input class="tin" id="impThumb" placeholder="URL da imagem de preview (opcional)"></div><div class="hmfoot"><button class="kbtn" data-tplimportsave>Salvar modelo</button></div></div>`); }
 async function saveImport(){ const ws=activeWs(); if(!ws) return;
@@ -387,9 +388,26 @@ async function useTemplate(id){ const ws=activeWs(); if(!ws) return; const x=TEM
   if(error){ toast('Erro ao criar a cópia'); return; }
   closeModal(); toast('Cópia criada como seu projeto. O editor chega na próxima fase.');
 }
-function editTemplate(id){ const x=TEMPLATES.find(t=>t.id===id); if(!x) return;
-  if(x.source==='canva' && x.edit_url){ window.open(x.edit_url,'_blank','noopener'); return; }
-  toast('Editor do Hub (com os carrosséis do Claude editáveis) chega na próxima fase.');
+function editCanva(id){ const x=TEMPLATES.find(t=>t.id===id); if(!x) return;
+  if(x.edit_url){ window.open(x.edit_url,'_blank','noopener'); return; }
+  toast('Este modelo não tem link de edição do Canva.');
+}
+async function editHub(id){ const ws=activeWs(); const x=TEMPLATES.find(t=>t.id===id); if(!ws||!x) return;
+  if(!(x.source==='canva' && x.canva_design_id)){ toast('Editor no Hub: em breve para modelos nativos/Claude.'); return; }
+  toast('Preparando PPTX do Canva... pode levar alguns segundos');
+  const { data:{ session } } = await sb.auth.getSession(); if(!session) return;
+  let j={}, ok=false;
+  try{
+    const r=await fetch(CANVA_FN+'/export?ws='+encodeURIComponent(ws.id)+'&design='+encodeURIComponent(x.canva_design_id)+'&jwt='+encodeURIComponent(session.access_token),{method:'POST'});
+    j=await r.json().catch(()=>({})); ok=r.ok && !j.error;
+  }catch(e){ j={error:'falha de rede ao chamar o export'}; }
+  if(!ok){
+    renderModal(`<div class="hmback" data-modalclose></div><div class="hmbox" style="width:min(540px,100%)"><div class="hmhead"><b>Não consegui exportar do Canva</b><button class="obtn" data-modalclose>Fechar</button></div><div style="font-size:12px;color:var(--dim);line-height:1.6">O Canva recusou a exportação. Erro retornado:<div class="mono" style="margin-top:8px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--ink);white-space:pre-wrap;word-break:break-word;font-size:11px">${esc(String(j.error||'desconhecido'))}</div><div style="margin-top:12px">Copia esse texto e me manda. Enquanto isso, dá pra usar o <b>Editar no Canva</b>.</div></div></div>`);
+    return;
+  }
+  await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:x.id, source:'canva-export', canva_design_id:x.canva_design_id, title:x.title+' (cópia)', format:x.format, page_count:x.page_count||1, file_path:j.path||null, status:'draft', created_by:S.user&&S.user.id });
+  window.open(j.url,'_blank','noopener');
+  closeModal(); toast('PPTX gerado ('+Math.round((j.size||0)/1024)+' KB). O editor visual no Hub vem a seguir.');
 }
 
 /* ---------- data ---------- */
@@ -818,7 +836,8 @@ document.addEventListener('click',e=>{
   const star=e.target.closest('[data-favtpl]'); if(star){ toggleFav(star.dataset.favtpl); return; }
   const dpl=e.target.closest('[data-deploytpl]'); if(dpl){ toggleDeploy(dpl.dataset.deploytpl); return; }
   const use=e.target.closest('[data-usetpl]'); if(use){ useTemplate(use.dataset.usetpl); return; }
-  const edt=e.target.closest('[data-edittpl]'); if(edt){ editTemplate(edt.dataset.edittpl); return; }
+  const edh=e.target.closest('[data-edithub]'); if(edh){ editHub(edh.dataset.edithub); return; }
+  const edc=e.target.closest('[data-editcanva]'); if(edc){ editCanva(edc.dataset.editcanva); return; }
   const vwt=e.target.closest('[data-viewtpl]'); if(vwt){ openTplPreview(vwt.dataset.viewtpl); return; }
   const imp=e.target.closest('[data-tplimport]'); if(imp){ openImport(); return; }
   const imps=e.target.closest('[data-tplimportsave]'); if(imps){ saveImport(); return; }
