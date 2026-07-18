@@ -220,6 +220,10 @@
   .edel:hover { outline:1px solid rgba(34,224,124,.5); }
   .edel.sel { outline:2px solid var(--accent); outline-offset:0; }
   .edtext[contenteditable="true"] { cursor:text; background:rgba(255,255,255,.06); }
+  .pptxai { display:flex; gap:8px; padding:10px 18px; border-top:1px solid var(--border); background:var(--card2); }
+  .pptxai #aiInput { flex:1; min-width:0; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 13px; color:var(--ink); font:500 12.5px 'Montserrat'; outline:none; }
+  .pptxai #aiInput:focus { border-color:var(--accent); }
+  .pptxaireply { padding:9px 18px; font-size:11.5px; color:var(--accent); background:var(--card2); border-top:1px solid var(--border); }
 </style>
 </head>
 <body data-mode="console">
@@ -260,6 +264,8 @@ const FMT_META={ post:{label:'Post',dim:'1080 × 1080',ar:'1 / 1'}, carrossel:{l
 const BASE_NICHES=['Advocacia','Estética','Odontologia','Imobiliária','Restaurante','Barbearia','Academia','Contabilidade','Concessionária','Construção','Clínica','Marketing','Mentoria'];
 let TEMPLATES=[], TPL_FAV=new Set(), TPL_DEPLOYED=new Set(), tplLoadedFor=null, tplLoading=false, CANVA_CONN=null;
 const CANVA_FN=SB_URL+'/functions/v1/canva';
+const AI_FN=SB_URL+'/functions/v1/ai';
+let aiFile=null;
 async function ensureTemplates(){
   if(tplLoadedFor===S.wsId || tplLoading || !S.wsId) return;
   tplLoading=true; const ws=S.wsId;
@@ -477,7 +483,9 @@ function renderEditor(){ const E=EDIT; if(!E) return;
   const stageW=Math.min(540,E.w), scale=stageW/E.w; E.scale=scale;
   ov.innerHTML=`<div class="pptxbar"><b>${esc(E.title)}</b><span style="color:var(--dim);font-size:11px">${E.w}×${E.h}${E.slides.length>1?` · pág ${E.page+1}/${E.slides.length}`:''}</span><div style="flex:1"></div>${E.slides.length>1?`<button class="obtn" data-edpg="-1">‹</button><button class="obtn" data-edpg="1">›</button>`:''}<button class="obtn" data-edadd>+ Texto</button><button class="obtn" data-eddel>Excluir</button><button class="kbtn" data-edsave>Salvar</button><button class="obtn" data-edclose>Fechar</button></div>
     <div class="pptxwrap"><div class="pptxstage" id="pptxStage" style="width:${stageW}px;height:${(E.h*scale).toFixed(1)}px">${slide.els.map((el,i)=>edElHtml(el,i,scale)).join('')}</div></div>
-    <div class="pptxprops">${edProps()}</div>`;
+    <div class="pptxprops">${edProps()}</div>
+    <div class="pptxai"><input id="aiInput" placeholder="Peça ao Claude: troque a foto pelo anexo, mude o preço para R$ 420.000, deixe o título maior..." value="${escAttr(E.aiInput||'')}"><input type="file" id="aiFileInput" accept="image/*" style="display:none"><button class="obtn" data-aiattach>📎${aiFile?' 1':''}</button><button class="kbtn" data-aisend>Pedir ao Claude</button></div>
+    ${E.aiReply?`<div class="pptxaireply">${esc(E.aiReply)}</div>`:''}`;
   wireEditor();
 }
 function wireEditor(){ const stage=$('pptxStage'); if(!stage) return;
@@ -500,7 +508,35 @@ async function edSave(){ const E=EDIT, ws=activeWs(); if(!E||!ws) return;
   else { const { data } = await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:E.tplId, source:'canva-export', title:E.title+' (editado)', format:E.h/E.w>1.4?(E.h/E.w>1.6?'story':'carrossel'):'post', page_count:E.slides.length, content, status:'draft', created_by:S.user&&S.user.id }).select().single(); if(data) E.projectId=data.id; }
   toast('Projeto salvo no Hub');
 }
-function edClose(){ const ov=$('pptxEditor'); if(ov) ov.remove(); EDIT=null; }
+function edClose(){ const ov=$('pptxEditor'); if(ov) ov.remove(); EDIT=null; aiFile=null; }
+function fileToB64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(',')[1]); fr.onerror=rej; fr.readAsDataURL(file); }); }
+function applyAiOps(ops){ if(!EDIT||!Array.isArray(ops)) return; const els=EDIT.slides[EDIT.page].els; const dels=[];
+  for(const o of ops){
+    if(o.op==='add_text'){ els.push({type:'text', x:o.x!=null?o.x:EDIT.w*0.2, y:o.y!=null?o.y:EDIT.h*0.45, w:o.w!=null?o.w:EDIT.w*0.6, h:o.h!=null?o.h:60, size:o.size||32, color:o.color||'#FFFFFF', bold:false, align:'ctr', text:o.text||'Novo texto'}); continue; }
+    if(o.op==='delete'){ if(typeof o.index==='number') dels.push(o.index); continue; }
+    const m=els[o.index]; if(!m) continue;
+    if(o.op==='set_text'&&o.text!=null) m.text=o.text;
+    else if(o.op==='set_color'&&o.color) m.color=o.color;
+    else if(o.op==='set_size'&&o.size) m.size=o.size;
+    else if(o.op==='move'){ if(o.x!=null)m.x=o.x; if(o.y!=null)m.y=o.y; if(o.w!=null)m.w=o.w; if(o.h!=null)m.h=o.h; }
+    else if(o.op==='replace_image'&&o.src){ m.type='image'; m.src=o.src; delete m.text; }
+  }
+  dels.sort((a,b)=>b-a).forEach(i=>els.splice(i,1));
+}
+async function aiEdit(){ const E=EDIT; if(!E) return;
+  const instruction=(E.aiInput||'').trim(); if(!instruction){ toast('Escreva o que quer mudar'); return; }
+  const ws=activeWs(); const { data:{ session } } = await sb.auth.getSession(); if(!session){ toast('Faça login'); return; }
+  E.aiReply='Claude está trabalhando...'; renderEditor();
+  const els=E.slides[E.page].els.map((e,i)=>({i, type:e.type, text:(e.text||'').slice(0,80), x:Math.round(e.x), y:Math.round(e.y), w:Math.round(e.w), h:Math.round(e.h), color:e.color, size:e.size}));
+  let attachments=[];
+  try{ if(aiFile){ const b64=await fileToB64(aiFile); attachments=[{ data:b64, media_type:aiFile.type||'image/png' }]; } }catch(e){}
+  try{
+    const r=await fetch(AI_FN+'/edit?jwt='+encodeURIComponent(session.access_token), { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ ws:ws&&ws.id, instruction, w:E.w, h:E.h, elements:els, attachments }) });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||j.error){ E.aiReply='Erro: '+(j.error||r.status); renderEditor(); return; }
+    applyAiOps(j.operations||[]); aiFile=null; E.aiInput=''; E.aiReply=j.reply||'Feito.'; renderEditor();
+  }catch(e){ E.aiReply='Falha ao falar com o Claude.'; renderEditor(); }
+}
 
 /* ---------- data ---------- */
 const CLIENTES=[
@@ -933,6 +969,8 @@ document.addEventListener('click',e=>{
   const eddel=e.target.closest('[data-eddel]'); if(eddel){ if(EDIT&&EDIT.sel!=null){ EDIT.slides[EDIT.page].els.splice(EDIT.sel,1); EDIT.sel=null; renderEditor(); } return; }
   const edsv=e.target.closest('[data-edsave]'); if(edsv){ edSave(); return; }
   const edcl=e.target.closest('[data-edclose]'); if(edcl){ edClose(); return; }
+  const aia=e.target.closest('[data-aiattach]'); if(aia){ const fi=$('aiFileInput'); if(fi) fi.click(); return; }
+  const ais=e.target.closest('[data-aisend]'); if(ais){ aiEdit(); return; }
   const edf=e.target.closest('[data-edfont]'); if(edf){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.size=Math.max(6,(m.size||18)+(+edf.dataset.edfont)); renderEditor(); } } return; }
   const edb=e.target.closest('[data-edbold]'); if(edb){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.bold=!m.bold; renderEditor(); } } return; }
   const edh=e.target.closest('[data-edithub]'); if(edh){ editHub(edh.dataset.edithub); return; }
@@ -1030,9 +1068,11 @@ async function logout(){ try{ await sb.auth.signOut(); }catch(e){} WORKSPACES=[]
 
 /* ---------- boot ---------- */
 document.addEventListener('change', async e=>{
-  const wp=e.target.closest('#wsPick'); if(wp){ S.wsId=wp.value; localStorage.setItem('emhub_ws', S.wsId); tplLoadedFor=null; await loadWorkspaceLeads(S.wsId); render(); }
+  const wp=e.target.closest('#wsPick'); if(wp){ S.wsId=wp.value; localStorage.setItem('emhub_ws', S.wsId); tplLoadedFor=null; await loadWorkspaceLeads(S.wsId); render(); return; }
+  const afi=e.target.closest('#aiFileInput'); if(afi){ aiFile=(afi.files&&afi.files[0])||null; if(EDIT) renderEditor(); }
 });
 document.addEventListener('input', e=>{ const s=e.target.closest('#tplSearch'); if(s){ S.tpl.q=s.value; rerenderTplResults(); return; }
+  const ai=e.target.closest('#aiInput'); if(ai){ if(EDIT) EDIT.aiInput=ai.value; return; }
   const c=e.target.closest('#edColor'); if(c){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.color=c.value; const el=$('pptxStage'); if(el){ const d=el.querySelector('.edel[data-eidx="'+EDIT.sel+'"] .edtext'); if(d) d.style.color=c.value; } } } } });
 async function boot(){
   try{
