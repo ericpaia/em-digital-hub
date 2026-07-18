@@ -5,10 +5,13 @@
 -- (service role). RLS ligada e SEM policy = o navegador não lê nada disso.
 -- ============================================================
 
--- unique pra dar upsert nos modelos vindos do Canva (por design)
+-- unique pra dar upsert nos modelos vindos do Canva (por design).
+-- NÃO pode ser índice parcial: o upsert do PostgREST não consegue usar
+-- índice parcial como alvo de ON CONFLICT. Índice normal permite vários
+-- NULL (modelos importados) e garante unicidade quando há canva_design_id.
+drop index if exists public.templates_ws_canva;
 create unique index if not exists templates_ws_canva
-  on public.templates(workspace_id, canva_design_id)
-  where canva_design_id is not null;
+  on public.templates(workspace_id, canva_design_id);
 
 -- tokens de acesso do Canva (1 por workspace)
 create table if not exists public.canva_tokens (
