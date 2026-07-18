@@ -246,17 +246,19 @@ const escAttr=s=>esc(s).replace(/'/g,'&#39;');
 /* ---------- biblioteca de modelos ---------- */
 const FMT_META={ post:{label:'Post',dim:'1080 × 1080',ar:'1 / 1'}, carrossel:{label:'Carrossel',dim:'1080 × 1350',ar:'4 / 5'}, story:{label:'Story',dim:'1080 × 1920',ar:'9 / 16'} };
 const BASE_NICHES=['Advocacia','Estética','Odontologia','Imobiliária','Restaurante','Barbearia','Academia','Contabilidade','Concessionária','Construção','Clínica','Marketing','Mentoria'];
-let TEMPLATES=[], TPL_FAV=new Set(), TPL_DEPLOYED=new Set(), tplLoadedFor=null, tplLoading=false;
+let TEMPLATES=[], TPL_FAV=new Set(), TPL_DEPLOYED=new Set(), tplLoadedFor=null, tplLoading=false, CANVA_CONN=null;
+const CANVA_FN=SB_URL+'/functions/v1/canva';
 async function ensureTemplates(){
   if(tplLoadedFor===S.wsId || tplLoading || !S.wsId) return;
   tplLoading=true; const ws=S.wsId;
   try{
-    const [t,f,d]=await Promise.all([
+    const [t,f,d,c]=await Promise.all([
       sb.from('templates').select('*').eq('workspace_id',ws).order('updated_at',{ascending:false}),
       sb.from('template_favorites').select('template_id').eq('workspace_id',ws),
       sb.from('deployed_templates').select('template_id').eq('workspace_id',ws),
+      sb.from('canva_connections').select('*').eq('workspace_id',ws).limit(1),
     ]);
-    TEMPLATES=t.data||[]; TPL_FAV=new Set((f.data||[]).map(r=>r.template_id)); TPL_DEPLOYED=new Set((d.data||[]).map(r=>r.template_id)); tplLoadedFor=ws;
+    TEMPLATES=t.data||[]; TPL_FAV=new Set((f.data||[]).map(r=>r.template_id)); TPL_DEPLOYED=new Set((d.data||[]).map(r=>r.template_id)); CANVA_CONN=(c.data&&c.data[0])||null; tplLoadedFor=ws;
   }catch(e){ TEMPLATES=[]; tplLoadedFor=ws; }
   tplLoading=false;
   if(S.screen==='h3'&&S.ig==='modelos') renderScreen();
@@ -312,7 +314,34 @@ function tplLibrary(){ const t=S.tpl;
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 2px;align-items:center">${nichePills}<span style="flex:1;min-width:20px"></span><button class="chip ${t.fav?'on':''}" data-tplfav>★ Favoritos</button></div>
   <div id="tplResults">${tplResultsHtml()}</div>`;
 }
-function canvaStrip(){ return `<div class="canvastrip"><span class="d" style="background:#8A8F98"></span><div><b style="font-size:12px">Canva não conectado</b><div style="font-size:10.5px;color:var(--dim)">A sincronização automática da pasta chega na próxima fase</div></div><div style="flex:1"></div><button class="obtn" style="opacity:.5;cursor:not-allowed" data-toast="Conexão com o Canva chega na Fase 2">↻ Sincronizar</button></div>`; }
+function canvaStrip(){ const c=CANVA_CONN;
+  if(c && c.status==='connected'){
+    return `<div class="canvastrip"><span class="d" style="background:var(--accent)"></span><div><b style="font-size:12px">Canva conectado</b><div style="font-size:10.5px;color:var(--dim)">Pasta: ${esc(c.folder_name||c.folder_id||'—')}${c.last_sync_at?` · sincronizado ${timeAgo(c.last_sync_at)} atrás`:''}</div></div><div style="flex:1"></div><button class="obtn" data-canvasync>↻ Sincronizar</button><button class="obtn" data-canvaconnect>Trocar pasta</button><button class="obtn" data-canvadisconnect>Desconectar</button></div>`;
+  }
+  return `<div class="canvastrip"><span class="d" style="background:#8A8F98"></span><div><b style="font-size:12px">Canva não conectado</b><div style="font-size:10.5px;color:var(--dim)">Conecte a pasta do Canva para sincronizar seus modelos automaticamente</div></div><div style="flex:1"></div><button class="kbtn" data-canvaconnect>Conectar pasta</button></div>`;
+}
+async function canvaConnect(){ const ws=activeWs(); if(!ws) return;
+  const folder=prompt('ID da pasta do Canva (está na URL canva.com/folder/XXXX):', (CANVA_CONN&&CANVA_CONN.folder_id)||'FAHPqLNczLw'); if(!folder) return;
+  const fname=prompt('Nome da pasta (só pra exibir):', (CANVA_CONN&&CANVA_CONN.folder_name)||'EMDIGITAL HUB')||'';
+  const { data:{ session } } = await sb.auth.getSession(); if(!session){ toast('Faça login primeiro'); return; }
+  window.location.href = CANVA_FN+'/start?ws='+encodeURIComponent(ws.id)+'&folder='+encodeURIComponent(folder.trim())+'&fname='+encodeURIComponent(fname.trim())+'&jwt='+encodeURIComponent(session.access_token);
+}
+async function canvaSync(){ const ws=activeWs(); if(!ws) return;
+  const { data:{ session } } = await sb.auth.getSession(); if(!session) return;
+  toast('Sincronizando com o Canva...');
+  try{
+    const r=await fetch(CANVA_FN+'/sync?ws='+encodeURIComponent(ws.id)+'&jwt='+encodeURIComponent(session.access_token),{method:'POST'});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||j.error){ toast('Erro na sincronização: '+(j.error||r.status)); return; }
+    tplLoadedFor=null; await ensureTemplates(); toast((j.synced||0)+' modelos sincronizados');
+  }catch(e){ toast('Falha ao sincronizar'); }
+}
+async function canvaDisconnect(){ const ws=activeWs(); if(!ws) return;
+  if(!confirm('Desconectar o Canva e remover os modelos sincronizados desta biblioteca?')) return;
+  await sb.from('canva_connections').delete().eq('workspace_id',ws.id);
+  await sb.from('templates').delete().eq('workspace_id',ws.id).eq('source','canva');
+  CANVA_CONN=null; tplLoadedFor=null; await ensureTemplates(); toast('Canva desconectado');
+}
 function renderModal(html){ let m=$('hubModal'); if(!m){ m=document.createElement('div'); m.className='hmodal'; m.id='hubModal'; document.body.appendChild(m); } m.innerHTML=html; m.hidden=false; }
 function closeModal(){ const m=$('hubModal'); if(m) m.hidden=true; }
 function openTplPreview(id){ const x=TEMPLATES.find(t=>t.id===id); if(!x) return; const m=FMT_META[x.format]||FMT_META.post;
@@ -781,6 +810,9 @@ document.addEventListener('click',e=>{
   const imp=e.target.closest('[data-tplimport]'); if(imp){ openImport(); return; }
   const imps=e.target.closest('[data-tplimportsave]'); if(imps){ saveImport(); return; }
   const mcl=e.target.closest('[data-modalclose]'); if(mcl){ closeModal(); return; }
+  const cvc=e.target.closest('[data-canvaconnect]'); if(cvc){ canvaConnect(); return; }
+  const cvs=e.target.closest('[data-canvasync]'); if(cvs){ canvaSync(); return; }
+  const cvd=e.target.closest('[data-canvadisconnect]'); if(cvd){ canvaDisconnect(); return; }
   const tcd=e.target.closest('[data-tplcard]'); if(tcd){ openTplPreview(tcd.dataset.tplcard); return; }
   const fc=e.target.closest('[data-fchip]'); if(fc){ fc.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on')); fc.classList.add('on'); return; }
   const tg=e.target.closest('[data-tgl]'); if(tg){ const on=!tg.classList.contains('on'); tg.classList.toggle('on'); tg.style.background=on?'var(--accent)':'rgba(255,255,255,0.12)'; tg.innerHTML=`<span style="position:absolute; top:2px; ${on?'right:2px':'left:2px'}; width:16px; height:16px; border-radius:99px; background:${on?'#0A0C0A':'#F4F6F3'}"></span>`; return; }
@@ -875,6 +907,8 @@ async function boot(){
     const { data:{ session } } = await sb.auth.getSession();
     if(!session){ showLogin(); return; }
     await loadData(); render();
+    const cq=new URLSearchParams(location.search).get('canva');
+    if(cq){ toast(cq==='connected'?'Canva conectado com sucesso':'Não foi possível conectar o Canva'); history.replaceState(null,'',location.pathname); }
   }catch(err){ showLogin(traduzErro(err&&err.message)); }
 }
 boot();
