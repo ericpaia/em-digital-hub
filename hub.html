@@ -220,6 +220,12 @@
   .edel:hover { outline:1px solid rgba(34,224,124,.5); }
   .edel.sel { outline:2px solid var(--accent); outline-offset:0; }
   .edtext[contenteditable="true"] { cursor:text; background:rgba(255,255,255,.06); }
+  /* claude embutido (VS Code no navegador) */
+  .idewrap { max-width:1180px; }
+  .idebar { display:flex; align-items:center; gap:6px; padding:9px 14px; background:var(--card2); border:1px solid var(--border); border-bottom:0; border-radius:14px 14px 0 0; }
+  .idebar .idd { width:9px; height:9px; border-radius:99px; }
+  .ideframe { display:block; width:100%; height:74vh; border:1px solid var(--border); border-radius:0 0 14px 14px; background:#1e1e1e; }
+  .idenote { margin-top:10px; font-size:10.5px; color:var(--dim); }
 </style>
 </head>
 <body data-mode="console">
@@ -238,7 +244,7 @@ const $ = id => document.getElementById(id);
 function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; $('toasts').appendChild(t); setTimeout(()=>{t.style.opacity=0;t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2200); }
 
 /* ---------- state ---------- */
-const S = { mode:'console', screen:'c1', ig:'perfil', crm:'funil', wsId:null, user:null, tpl:{ fmt:'todos', niche:'todos', q:'', fav:false } };
+const S = { mode:'console', screen:'c1', ig:'perfil', crm:'funil', wsId:null, user:null, tpl:{ fmt:'todos', niche:'todos', q:'', fav:false }, claudeEmbed:false };
 
 /* ---------- supabase ---------- */
 const SB_URL = 'https://lmavwyvyrmsadnpgozrq.supabase.co';
@@ -814,6 +820,9 @@ function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Fu
   </div>`; }
 
 function h6(){ const ws=activeWs(); const name=ws?ws.name:'Cliente'; const url=(ws&&ws.claude_url)||'';
+  if(S.claudeEmbed && url){
+    return `<div class="idewrap"><div class="idebar"><span class="idd" style="background:#E5484D"></span><span class="idd" style="background:#EAB308"></span><span class="idd" style="background:#22C55E"></span><b style="margin-left:10px;font-size:12px">Claude — ${esc(name)}</b><div style="flex:1"></div><button class="obtn" style="padding:5px 12px;font-size:10px" data-claudeopen>Nova aba &#8599;</button><button class="obtn" style="padding:5px 12px;font-size:10px" data-claudeportal>Fechar</button></div><iframe class="ideframe" src="${escAttr(url)}" allow="clipboard-write; clipboard-read"></iframe><div class="idenote">Ficou em branco? Esse endereço não permite ser embutido (ex.: <b>claude.ai</b>). Pra embutir de verdade, use um <b>VS Code no navegador (code-server)</b> com o Claude Code na sua VPS — aí ele aparece aqui dentro.</div></div>`;
+  }
   return head('SEU ASSISTENTE','Claude')+`
   <div class="grid" style="grid-template-columns:1.4fr 1fr; max-width:1180px; align-items:start">
     <div class="card" style="padding:26px">
@@ -824,6 +833,7 @@ function h6(){ const ws=activeWs(); const name=ws?ws.name:'Cliente'; const url=(
       <div style="margin-top:18px;font-size:12.5px;color:var(--dim);line-height:1.6">Seu assistente abre no <b style="color:var(--ink)">claude.ai</b>, na sua própria conta (assento), já com o contexto e as skills do seu negócio instalados. Converse, gere conteúdo e peça relatórios direto lá.</div>
       <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="kbtn" data-claudeopen>Abrir meu Claude &#8599;</button>
+        ${url?`<button class="obtn" data-claudeembed>Abrir aqui (VS Code)</button>`:''}
         <button class="obtn" data-claudeset>${url?'Trocar link':'Configurar portal'}</button>
       </div>
     </div>
@@ -939,6 +949,8 @@ document.addEventListener('click',e=>{
   const clo=e.target.closest('[data-claudeopen]'); if(clo){ claudeOpen(); return; }
   const cls=e.target.closest('[data-claudeset]'); if(cls){ claudeSet(); return; }
   const clq=e.target.closest('[data-claudeq]'); if(clq){ claudeQ(clq.dataset.claudeq); return; }
+  const cle=e.target.closest('[data-claudeembed]'); if(cle){ S.claudeEmbed=true; renderScreen(); return; }
+  const clp=e.target.closest('[data-claudeportal]'); if(clp){ S.claudeEmbed=false; renderScreen(); return; }
   const igo=e.target.closest('[data-igopen]'); if(igo){ window.open(igo.dataset.igopen,'_blank','noopener'); return; }
   const igp=e.target.closest('[data-igprofile]'); if(igp){ const ws=activeWs(); if(ws&&ws.instagram){ window.open('https://instagram.com/'+ws.instagram,'_blank','noopener'); } else { S.ig='perfil'; renderScreen(); } return; }
   const ihs=e.target.closest('[data-ighandle-save]'); if(ihs){ const i=$('igHandle'); saveIgHandle(i&&i.value); return; }
