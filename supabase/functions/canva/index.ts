@@ -155,6 +155,28 @@ async function syncFolder(ws: string, folderId: string, token: string) {
   return seen.length;
 }
 
+async function exportDesignPptx(designId: string, token: string) {
+  const create = await fetch(`${API}/exports`, {
+    method: "POST",
+    headers: { authorization: "Bearer " + token, "content-type": "application/json" },
+    body: JSON.stringify({ design_id: designId, format: { type: "pptx" } }),
+  });
+  if (!create.ok) throw new Error("export create " + create.status + " " + (await create.text()));
+  let job = (await create.json()).job;
+  const started = Date.now();
+  while (job && job.status === "in_progress") {
+    if (Date.now() - started > 60000) throw new Error("export timeout");
+    await new Promise((r) => setTimeout(r, 2000));
+    const poll = await fetch(`${API}/exports/${job.id}`, { headers: { authorization: "Bearer " + token } });
+    if (!poll.ok) throw new Error("export poll " + poll.status + " " + (await poll.text()));
+    job = (await poll.json()).job;
+  }
+  if (!job || job.status !== "success") throw new Error("export status " + (job && job.status) + " " + JSON.stringify(job && job.error));
+  const url = job.urls && job.urls[0];
+  if (!url) throw new Error("export sem url");
+  return url;
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const route = url.pathname.split("/").filter(Boolean).pop(); // start | callback | sync
@@ -229,6 +251,26 @@ Deno.serve(async (req) => {
       const token = await validToken(ws);
       const n = await syncFolder(ws, folder, token);
       return json({ synced: n });
+    }
+
+    if (route === "export") {
+      const ws = p.get("ws") || "", design = p.get("design") || "", jwt = p.get("jwt") || "";
+      const user = jwt ? await userFromJwt(jwt) : null;
+      if (!user) return json({ error: "não autenticado" }, 401);
+      if (!(await isMember(ws, user.id))) return json({ error: "sem acesso" }, 403);
+      if (!design) return json({ error: "faltou design" }, 400);
+      const token = await validToken(ws);
+      const dl = await exportDesignPptx(design, token);
+      const res = await fetch(dl);
+      if (!res.ok) return json({ error: "download " + res.status }, 500);
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      const ct = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+      // path por design (produto) + path fixo (facilita a inspeção do spike)
+      const path = `${ws}/${design}.pptx`;
+      await admin.storage.from(BUCKET).upload(path, bytes, { contentType: ct, upsert: true });
+      await admin.storage.from(BUCKET).upload("exports/latest.pptx", bytes, { contentType: ct, upsert: true });
+      const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
+      return json({ url: data.publicUrl, path, size: bytes.length });
     }
 
     return json({ ok: true, service: "canva" });

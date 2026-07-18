@@ -369,8 +369,21 @@ async function toggleDeploy(id){ const ws=activeWs(); if(!ws) return; const on=T
   rerenderTplResults();
 }
 async function useTemplate(id){ const ws=activeWs(); if(!ws) return; const x=TEMPLATES.find(t=>t.id===id); if(!x) return;
-  const src=x.source==='canva'?'canva-export':(x.source==='claude'?'claude':'import');
-  const { error } = await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:x.id, source:src, canva_design_id:x.canva_design_id||null, title:x.title+' (cópia)', format:x.format, page_count:x.page_count||1, content:x.content||null, status:'draft', created_by:S.user&&S.user.id });
+  if(x.source==='canva' && x.canva_design_id){
+    toast('Exportando do Canva (PPTX)... pode levar alguns segundos');
+    const { data:{ session } } = await sb.auth.getSession(); if(!session) return;
+    let j={};
+    try{
+      const r=await fetch(CANVA_FN+'/export?ws='+encodeURIComponent(ws.id)+'&design='+encodeURIComponent(x.canva_design_id)+'&jwt='+encodeURIComponent(session.access_token),{method:'POST'});
+      j=await r.json().catch(()=>({}));
+      if(!r.ok||j.error){ toast('Erro no export: '+(j.error||r.status)); return; }
+    }catch(e){ toast('Falha ao exportar'); return; }
+    await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:x.id, source:'canva-export', canva_design_id:x.canva_design_id, title:x.title+' (cópia)', format:x.format, page_count:x.page_count||1, file_path:j.path||null, status:'draft', created_by:S.user&&S.user.id });
+    closeModal(); toast('Exportado! Projeto criado em PPTX ('+Math.round((j.size||0)/1024)+' KB).');
+    return;
+  }
+  const src=x.source==='claude'?'claude':'import';
+  const { error } = await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:x.id, source:src, canva_design_id:null, title:x.title+' (cópia)', format:x.format, page_count:x.page_count||1, content:x.content||null, status:'draft', created_by:S.user&&S.user.id });
   if(error){ toast('Erro ao criar a cópia'); return; }
   closeModal(); toast('Cópia criada como seu projeto. O editor chega na próxima fase.');
 }
