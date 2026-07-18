@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   :root { --accent:#22E07C; --bg:#0A0C0A; --card:#111411; --card2:#151915; --border:rgba(255,255,255,0.07); --ink:#F4F6F3; --dim:#A8B0AA; --glow:rgba(34,224,124,0.09); }
   [data-mode="hub"] { --accent:#FF7A29; --bg:#0C0A09; --card:#151110; --card2:#181310; --dim:#B3ACA5; --glow:rgba(255,122,41,0.10); }
@@ -208,6 +209,17 @@
   .hmart { border-radius:14px; overflow:hidden; position:relative; background:var(--card2); border:1px solid var(--border); width:100%; }
   .hmart img { width:100%; height:100%; object-fit:contain; display:block; }
   .hmfoot { display:flex; gap:10px; margin-top:16px; }
+  /* editor pptx */
+  .pptxed { position:fixed; inset:0; z-index:180; background:var(--bg); display:flex; flex-direction:column; }
+  .pptxbar { display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--card2); }
+  .pptxbar b { font-size:14px; font-weight:700; }
+  .pptxwrap { flex:1; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:28px; }
+  .pptxstage { position:relative; background:#fff; border-radius:6px; box-shadow:0 20px 60px rgba(0,0,0,.5); overflow:hidden; flex:none; }
+  .pptxprops { display:flex; align-items:center; gap:8px; padding:10px 18px; border-top:1px solid var(--border); background:var(--card2); min-height:48px; }
+  .edel { cursor:move; box-sizing:border-box; }
+  .edel:hover { outline:1px solid rgba(34,224,124,.5); }
+  .edel.sel { outline:2px solid var(--accent); outline-offset:0; }
+  .edtext[contenteditable="true"] { cursor:text; background:rgba(255,255,255,.06); }
 </style>
 </head>
 <body data-mode="console">
@@ -405,10 +417,90 @@ async function editHub(id){ const ws=activeWs(); const x=TEMPLATES.find(t=>t.id=
     renderModal(`<div class="hmback" data-modalclose></div><div class="hmbox" style="width:min(540px,100%)"><div class="hmhead"><b>Não consegui exportar do Canva</b><button class="obtn" data-modalclose>Fechar</button></div><div style="font-size:12px;color:var(--dim);line-height:1.6">O Canva recusou a exportação. Erro retornado:<div class="mono" style="margin-top:8px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--ink);white-space:pre-wrap;word-break:break-word;font-size:11px">${esc(String(j.error||'desconhecido'))}</div><div style="margin-top:12px">Copia esse texto e me manda. Enquanto isso, dá pra usar o <b>Editar no Canva</b>.</div></div></div>`);
     return;
   }
-  await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:x.id, source:'canva-export', canva_design_id:x.canva_design_id, title:x.title+' (cópia)', format:x.format, page_count:x.page_count||1, file_path:j.path||null, status:'draft', created_by:S.user&&S.user.id });
-  window.open(j.url,'_blank','noopener');
-  closeModal(); toast('PPTX gerado ('+Math.round((j.size||0)/1024)+' KB). O editor visual no Hub vem a seguir.');
+  closeModal(); toast('PPTX gerado ('+Math.round((j.size||0)/1024)+' KB). Abrindo no editor...');
+  openPptxEditor(j.url, x.title, x.id);
 }
+
+/* ---------- editor de PPTX no Hub ---------- */
+let EDIT=null;
+async function parsePptxZip(zip){
+  const DP=new DOMParser(), EMU=9525;
+  const P=x=>DP.parseFromString(x,'application/xml');
+  const q=(e,n)=>e.getElementsByTagName(n), q1=(e,n)=>{const x=q(e,n);return x.length?x[0]:null;}, at=(e,a)=>e&&e.getAttribute?e.getAttribute(a):null;
+  const gT=async p=>{const f=zip.file(p);return f?await f.async('string'):'';};
+  const gImg=async p=>{const f=zip.file(p);if(!f)return null;const b64=await f.async('base64');const ext=(p.split('.').pop()||'').toLowerCase();const m=ext==='jpeg'||ext==='jpg'?'image/jpeg':ext==='svg'?'image/svg+xml':'image/png';return 'data:'+m+';base64,'+b64;};
+  const rels=x=>{const d=P(x),m={};for(const r of d.getElementsByTagName('Relationship'))m[r.getAttribute('Id')]=r.getAttribute('Target');return m;};
+  const xf=sp=>{const x=q1(sp,'a:xfrm');if(!x)return null;const o=q1(x,'a:off'),e=q1(x,'a:ext');if(!o||!e)return null;return{x:+at(o,'x')||0,y:+at(o,'y')||0,cx:+at(e,'cx')||0,cy:+at(e,'cy')||0,rot:(+at(x,'rot')||0)/60000};};
+  const col=n=>{if(!n)return null;const s=q1(n,'a:solidFill');if(!s)return null;const c=q1(s,'a:srgbClr');return c?'#'+at(c,'val'):null;};
+  const txt=sp=>{const tb=q1(sp,'p:txBody');if(!tb)return null;let lines=[],size=null,color=null,bold=false,align='l';for(const p of q(tb,'a:p')){const pr=q1(p,'a:pPr');if(pr&&at(pr,'algn'))align=at(pr,'algn');let ln='';for(const r of q(p,'a:r')){const t=q1(r,'a:t');if(t)ln+=t.textContent;const rp=q1(r,'a:rPr');if(rp){if(size==null&&at(rp,'sz'))size=+at(rp,'sz')/100;if(at(rp,'b')==='1')bold=true;const c=col(rp);if(c&&!color)color=c;}}lines.push(ln);}const text=lines.join('\n').trim();if(!text)return null;return{text,size:size||18,color:color||'#000000',bold,align};};
+  const imgOf=async(node,rmap)=>{const b=q1(node,'a:blip');if(!b)return null;const id=at(b,'r:embed')||at(b,'embed');if(!id)return null;const tg=rmap[id];if(!tg)return null;return await gImg('ppt/'+tg.replace(/^\.\.\//,''));};
+  const ag=(g,e)=>{if(!g)return e;const sx=g.chExtCx?g.extCx/g.chExtCx:1,sy=g.chExtCy?g.extCy/g.chExtCy:1;return{...e,x:g.offX+(e.x-g.chOffX)*sx,y:g.offY+(e.y-g.chOffY)*sy,cx:e.cx*sx,cy:e.cy*sy};};
+  async function walk(node,rmap,g,out){for(const ch of Array.from(node.childNodes)){const tag=ch.tagName;
+    if(tag==='p:sp'){const pr=q1(ch,'p:spPr'),f=xf(pr);if(!f)continue;let el={type:'shape',x:f.x,y:f.y,cx:f.cx,cy:f.cy,rot:f.rot,fill:col(pr)};const t=txt(ch);if(t){el.type='text';Object.assign(el,t);}else{const s=await imgOf(pr,rmap);if(s){el.type='image';el.src=s;}}out.push(ag(g,el));}
+    else if(tag==='p:pic'){const pr=q1(ch,'p:spPr'),f=xf(pr);if(!f)continue;const s=await imgOf(ch,rmap);out.push(ag(g,{type:'image',x:f.x,y:f.y,cx:f.cx,cy:f.cy,rot:f.rot,src:s}));}
+    else if(tag==='p:grpSp'){const gp=q1(ch,'p:grpSpPr'),x=gp?q1(gp,'a:xfrm'):null;if(!x){await walk(ch,rmap,g,out);continue;}const o=q1(x,'a:off'),e=q1(x,'a:ext'),co=q1(x,'a:chOff'),ce=q1(x,'a:chExt');let ng={offX:+at(o,'x')||0,offY:+at(o,'y')||0,extCx:+at(e,'cx')||0,extCy:+at(e,'cy')||0,chOffX:+at(co,'x')||0,chOffY:+at(co,'y')||0,chExtCx:+at(ce,'cx')||0,chExtCy:+at(ce,'cy')||0};if(g){const t=ag(g,{x:ng.offX,y:ng.offY,cx:ng.extCx,cy:ng.extCy});ng.offX=t.x;ng.offY=t.y;ng.extCx=t.cx;ng.extCy=t.cy;}await walk(ch,rmap,ng,out);}
+  }}
+  const pres=P(await gT('ppt/presentation.xml')); const sz=q1(pres,'p:sldSz');
+  const W=+at(sz,'cx')||10287000,H=+at(sz,'cy')||12852400;
+  let pr={}; try{ pr=rels(await gT('ppt/_rels/presentation.xml.rels')); }catch(_){}
+  const lst=q1(pres,'p:sldIdLst'); const ids=lst?Array.from(q(lst,'p:sldId')):[];
+  let paths=ids.map(n=>pr[at(n,'r:id')||at(n,'id')]).filter(Boolean).map(t=>'ppt/'+t.replace(/^\.\.\//,''));
+  if(!paths.length)paths=['ppt/slides/slide1.xml'];
+  const slides=[];
+  for(const sp of paths){const rp=sp.replace(/slides\/([^/]+)$/,'slides/_rels/$1.rels');let rmap={};try{rmap=rels(await gT(rp));}catch(_){}const doc=P(await gT(sp));const tree=q1(doc,'p:spTree');const out=[];if(tree)await walk(tree,rmap,null,out);const els=out.map(e=>({...e,x:e.x/EMU,y:e.y/EMU,w:e.cx/EMU,h:e.cy/EMU})).filter(e=>e.w>1&&e.h>1);slides.push({els});}
+  return {w:Math.round(W/EMU),h:Math.round(H/EMU),slides};
+}
+async function openPptxEditor(url,title,tplId){
+  if(!window.JSZip){ toast('Editor carregando, tente de novo em 1s'); return; }
+  let buf; try{ const r=await fetch(url); if(!r.ok) throw 0; buf=await r.arrayBuffer(); }catch(e){ toast('Não consegui baixar o PPTX'); return; }
+  let model; try{ const zip=await JSZip.loadAsync(buf); model=await parsePptxZip(zip); }catch(e){ toast('Falha ao ler o PPTX'); return; }
+  EDIT={ title:title||'Editor', w:model.w, h:model.h, slides:model.slides, page:0, sel:null, tplId:tplId||null, projectId:null };
+  renderEditor();
+}
+const ALIGN={l:'left',ctr:'center',r:'right',just:'justify'};
+function edElHtml(el,i,scale){
+  const st=`position:absolute;left:${(el.x*scale).toFixed(1)}px;top:${(el.y*scale).toFixed(1)}px;width:${(el.w*scale).toFixed(1)}px;height:${(el.h*scale).toFixed(1)}px;${el.rot?`transform:rotate(${el.rot}deg);`:''}`;
+  const sel=EDIT.sel===i?' sel':'';
+  if(el.type==='image') return `<div class="edel${sel}" data-eidx="${i}" style="${st}"><img src="${el.src}" draggable="false" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></div>`;
+  if(el.type==='text'){ const fs=Math.max(6,el.size*1.3333*scale); return `<div class="edel edtxt${sel}" data-eidx="${i}" style="${st}display:flex;flex-direction:column;justify-content:center"><div class="edtext" style="color:${el.color};font-size:${fs.toFixed(1)}px;font-weight:${el.bold?700:400};text-align:${ALIGN[el.align]||'left'};line-height:1.15;white-space:pre-wrap;outline:none;width:100%">${esc(el.text)}</div></div>`; }
+  if(el.fill) return `<div class="edel${sel}" data-eidx="${i}" style="${st}background:${el.fill}"></div>`;
+  return `<div class="edel${sel}" data-eidx="${i}" style="${st}"></div>`;
+}
+function edProps(){ const E=EDIT; if(E.sel==null) return '<span style="color:var(--dim);font-size:11px">Clique para selecionar · arraste para mover · duplo-clique no texto para editar</span>';
+  const el=E.slides[E.page].els[E.sel]; if(!el) return '';
+  if(el.type==='text') return `<span style="font-size:11px;color:var(--dim);margin-right:4px">Texto</span><button class="obtn" data-edfont="-2">A−</button><button class="obtn" data-edfont="2">A+</button><button class="obtn ${el.bold?'':''}" data-edbold>Negrito</button><input type="color" id="edColor" value="${/^#[0-9A-Fa-f]{6}$/.test(el.color)?el.color:'#000000'}" style="width:36px;height:28px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer">`;
+  return `<span style="font-size:11px;color:var(--dim)">${el.type==='image'?'Imagem':'Forma'} selecionada</span>`;
+}
+function renderEditor(){ const E=EDIT; if(!E) return;
+  let ov=$('pptxEditor'); if(!ov){ ov=document.createElement('div'); ov.id='pptxEditor'; ov.className='pptxed'; document.body.appendChild(ov); }
+  const slide=E.slides[E.page]||{els:[]};
+  const stageW=Math.min(540,E.w), scale=stageW/E.w; E.scale=scale;
+  ov.innerHTML=`<div class="pptxbar"><b>${esc(E.title)}</b><span style="color:var(--dim);font-size:11px">${E.w}×${E.h}${E.slides.length>1?` · pág ${E.page+1}/${E.slides.length}`:''}</span><div style="flex:1"></div>${E.slides.length>1?`<button class="obtn" data-edpg="-1">‹</button><button class="obtn" data-edpg="1">›</button>`:''}<button class="obtn" data-edadd>+ Texto</button><button class="obtn" data-eddel>Excluir</button><button class="kbtn" data-edsave>Salvar</button><button class="obtn" data-edclose>Fechar</button></div>
+    <div class="pptxwrap"><div class="pptxstage" id="pptxStage" style="width:${stageW}px;height:${(E.h*scale).toFixed(1)}px">${slide.els.map((el,i)=>edElHtml(el,i,scale)).join('')}</div></div>
+    <div class="pptxprops">${edProps()}</div>`;
+  wireEditor();
+}
+function wireEditor(){ const stage=$('pptxStage'); if(!stage) return;
+  stage.onmousedown=e=>{ const el=e.target.closest('.edel'); if(!el) return; const ce=el.querySelector('[contenteditable="true"]'); if(ce) return;
+    const i=+el.dataset.eidx; EDIT.sel=i; const m=EDIT.slides[EDIT.page].els[i], sc=EDIT.scale;
+    stage.querySelectorAll('.edel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel');
+    const sx=e.clientX, sy=e.clientY, ox=m.x, oy=m.y; let moved=false;
+    const move=ev=>{ moved=true; m.x=ox+(ev.clientX-sx)/sc; m.y=oy+(ev.clientY-sy)/sc; el.style.left=(m.x*sc).toFixed(1)+'px'; el.style.top=(m.y*sc).toFixed(1)+'px'; };
+    const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); renderEditor(); };
+    document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault();
+  };
+  stage.ondblclick=e=>{ const el=e.target.closest('.edel.edtxt'); if(!el) return; const ce=el.querySelector('.edtext'); if(!ce) return;
+    ce.setAttribute('contenteditable','true'); ce.focus();
+    ce.onblur=()=>{ ce.setAttribute('contenteditable','false'); const m=EDIT.slides[EDIT.page].els[+el.dataset.eidx]; if(m) m.text=(ce.innerText!=null?ce.innerText:ce.textContent); };
+  };
+}
+async function edSave(){ const E=EDIT, ws=activeWs(); if(!E||!ws) return;
+  const content={ w:E.w, h:E.h, slides:E.slides };
+  if(E.projectId){ await sb.from('projects').update({ content, updated_at:new Date().toISOString() }).eq('id',E.projectId); }
+  else { const { data } = await sb.from('projects').insert({ workspace_id:ws.id, source_template_id:E.tplId, source:'canva-export', title:E.title+' (editado)', format:E.h/E.w>1.4?(E.h/E.w>1.6?'story':'carrossel'):'post', page_count:E.slides.length, content, status:'draft', created_by:S.user&&S.user.id }).select().single(); if(data) E.projectId=data.id; }
+  toast('Projeto salvo no Hub');
+}
+function edClose(){ const ov=$('pptxEditor'); if(ov) ov.remove(); EDIT=null; }
 
 /* ---------- data ---------- */
 const CLIENTES=[
@@ -836,6 +928,13 @@ document.addEventListener('click',e=>{
   const star=e.target.closest('[data-favtpl]'); if(star){ toggleFav(star.dataset.favtpl); return; }
   const dpl=e.target.closest('[data-deploytpl]'); if(dpl){ toggleDeploy(dpl.dataset.deploytpl); return; }
   const use=e.target.closest('[data-usetpl]'); if(use){ useTemplate(use.dataset.usetpl); return; }
+  const edpg=e.target.closest('[data-edpg]'); if(edpg){ if(EDIT){ EDIT.page=Math.max(0,Math.min(EDIT.slides.length-1,EDIT.page+(+edpg.dataset.edpg))); EDIT.sel=null; renderEditor(); } return; }
+  const edadd=e.target.closest('[data-edadd]'); if(edadd){ if(EDIT){ const s=EDIT.slides[EDIT.page]; s.els.push({type:'text',x:EDIT.w*0.2,y:EDIT.h*0.45,w:EDIT.w*0.6,h:60,size:32,color:'#FFFFFF',bold:true,align:'ctr',text:'Novo texto'}); EDIT.sel=s.els.length-1; renderEditor(); } return; }
+  const eddel=e.target.closest('[data-eddel]'); if(eddel){ if(EDIT&&EDIT.sel!=null){ EDIT.slides[EDIT.page].els.splice(EDIT.sel,1); EDIT.sel=null; renderEditor(); } return; }
+  const edsv=e.target.closest('[data-edsave]'); if(edsv){ edSave(); return; }
+  const edcl=e.target.closest('[data-edclose]'); if(edcl){ edClose(); return; }
+  const edf=e.target.closest('[data-edfont]'); if(edf){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.size=Math.max(6,(m.size||18)+(+edf.dataset.edfont)); renderEditor(); } } return; }
+  const edb=e.target.closest('[data-edbold]'); if(edb){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.bold=!m.bold; renderEditor(); } } return; }
   const edh=e.target.closest('[data-edithub]'); if(edh){ editHub(edh.dataset.edithub); return; }
   const edc=e.target.closest('[data-editcanva]'); if(edc){ editCanva(edc.dataset.editcanva); return; }
   const vwt=e.target.closest('[data-viewtpl]'); if(vwt){ openTplPreview(vwt.dataset.viewtpl); return; }
@@ -933,7 +1032,8 @@ async function logout(){ try{ await sb.auth.signOut(); }catch(e){} WORKSPACES=[]
 document.addEventListener('change', async e=>{
   const wp=e.target.closest('#wsPick'); if(wp){ S.wsId=wp.value; localStorage.setItem('emhub_ws', S.wsId); tplLoadedFor=null; await loadWorkspaceLeads(S.wsId); render(); }
 });
-document.addEventListener('input', e=>{ const s=e.target.closest('#tplSearch'); if(s){ S.tpl.q=s.value; rerenderTplResults(); } });
+document.addEventListener('input', e=>{ const s=e.target.closest('#tplSearch'); if(s){ S.tpl.q=s.value; rerenderTplResults(); return; }
+  const c=e.target.closest('#edColor'); if(c){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.color=c.value; const el=$('pptxStage'); if(el){ const d=el.querySelector('.edel[data-eidx="'+EDIT.sel+'"] .edtext'); if(d) d.style.color=c.value; } } } } });
 async function boot(){
   try{
     const { data:{ session } } = await sb.auth.getSession();
