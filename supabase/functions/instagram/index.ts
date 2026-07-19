@@ -60,6 +60,21 @@ async function ensureFresh(ws: string, conn: any): Promise<string> {
   return token;
 }
 
+// Dados do perfil (foto, contadores, bio). Tenta o conjunto completo e,
+// se algum campo nao for suportado, cai pro reduzido pra nao quebrar.
+async function fetchProfile(token: string) {
+  const full = "user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count,biography,website";
+  const safe = "user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count";
+  for (const f of [full, safe]) {
+    try {
+      const r = await fetch(`${IG}/me?fields=${f}&access_token=${encodeURIComponent(token)}`);
+      const d = await r.json();
+      if (d && !d.error) return d;
+    } catch (_) { /* tenta o conjunto reduzido */ }
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   const url = new URL(req.url);
@@ -73,11 +88,12 @@ Deno.serve(async (req) => {
   if (!conn || !conn.access_token) return json({ media: [], connected: false });
 
   const token = await ensureFresh(ws, conn);
+  const profile = await fetchProfile(token);
   const fields = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp";
   try {
     const r = await fetch(`${IG}/me/media?fields=${fields}&limit=12&access_token=${encodeURIComponent(token)}`);
     const d = await r.json();
-    if (d && d.error) return json({ media: [], connected: true, username: conn.username, error: d.error.message || "token" });
+    if (d && d.error) return json({ media: [], connected: true, username: conn.username, profile, error: d.error.message || "token" });
     const media = (d.data || [])
       .map((m: any) => ({
         id: m.id,
@@ -87,8 +103,8 @@ Deno.serve(async (req) => {
         caption: m.caption || "",
       }))
       .filter((m: any) => m.url);
-    return json({ media, connected: true, username: conn.username });
+    return json({ media, connected: true, username: conn.username, profile });
   } catch (e) {
-    return json({ media: [], connected: true, username: conn.username, error: "rede" });
+    return json({ media: [], connected: true, username: conn.username, profile, error: "rede" });
   }
 });

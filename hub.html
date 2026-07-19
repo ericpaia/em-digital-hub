@@ -806,32 +806,44 @@ function igPerfil(){
   const url='https://instagram.com/'+ig;
   const feed = ws ? IG_FEED[ws.id] : null;
   if(ws && feed===undefined){ loadIgFeed(ws.id); }
-  let tiles, note;
+  const p = (feed && feed.profile) || null;
+  const nfmt=n=>{ n=+n||0; return n>=1000?(n/1000).toFixed(n>=10000?0:1).replace('.0','').replace('.',',')+' mil':(''+n); };
+  const avatar = p && p.profile_picture_url
+    ? `<img src="${escAttr(p.profile_picture_url)}" alt="" style="width:100%;height:100%;border-radius:99px;object-fit:cover;display:block">`
+    : `<div style="width:100%;height:100%;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px">${initials(ws.name)}</div>`;
+  const posts = p ? nfmt(p.media_count) : (feed&&feed.media?String(feed.media.length):'—');
+  const followers = p ? nfmt(p.followers_count) : '—';
+  const following = p ? nfmt(p.follows_count) : '—';
+  const st=(v,l)=>`<span style="font-size:13px"><b style="color:var(--ink);font-weight:700">${v}</b> <span style="color:var(--dim)">${l}</span></span>`;
+  const name = (p&&p.name)||ws.name;
+  const bio = p && p.biography ? `<div style="font-size:12px;line-height:1.5;margin-top:6px;white-space:pre-line">${esc(p.biography)}</div>` : '';
+  const siteLink = (p&&p.website)||(ws&&ws.site_url)||'';
+  const linkHtml = siteLink ? `<div style="margin-top:5px"><span data-igopen="${escAttr(siteLink)}" style="font-size:12px;color:var(--accent);font-weight:600;cursor:pointer">${esc(siteLink.replace(/^https?:\/\//,'').replace(/\/+$/,''))}</span></div>` : '';
+  let tiles, note='';
   if(feed && feed.media && feed.media.length){
-    tiles = feed.media.slice(0,9).map(m=>`<div data-igopen="${escAttr(m.permalink||url)}" title="Ver no Instagram" style="aspect-ratio:1/1; border-radius:8px; cursor:pointer; border:1px solid var(--border); background:#000 center/cover no-repeat; background-image:url('${escAttr(m.url)}')"></div>`).join('');
-    note = `<span style="color:var(--accent)">&#9679;</span> Feed ao vivo conectado${feed.username?' (@'+esc(feed.username)+')':''}. Clique num post pra abrir no Instagram.`;
+    tiles = feed.media.slice(0,9).map(m=>`<div data-igopen="${escAttr(m.permalink||url)}" title="Ver no Instagram" style="aspect-ratio:1/1; cursor:pointer; background:#000 center/cover no-repeat; background-image:url('${escAttr(m.url)}')"></div>`).join('');
   } else {
-    tiles = Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; border:1px solid var(--border); border-radius:8px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
-    if(feed===undefined) note = 'Carregando seu feed...';
+    tiles = Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
+    if(feed===undefined) note = 'Carregando o perfil...';
     else if(feed && feed.error) note = 'Não consegui puxar o feed agora ('+esc(String(feed.error))+'). Use o botão Abrir acima.';
-    else if(feed && feed.connected) note = 'Conectado, mas sem posts recentes pra mostrar.';
-    else note = 'Pra puxar seus posts reais aqui, falta ligar a API do Instagram (função e token no Supabase).';
+    else note = 'Sem posts recentes pra mostrar.';
   }
-  return `<div class="card" style="max-width:600px; overflow:hidden; padding:0">
-    <div style="padding:26px; display:flex; align-items:center; gap:18px; border-bottom:1px solid var(--border)">
-      <div style="width:78px;height:78px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);display:flex;align-items:center;justify-content:center;flex:none;padding:3px"><div style="width:100%;height:100%;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px">${initials(ws.name)}</div></div>
+  return `<div class="card" style="max-width:640px; overflow:hidden; padding:0">
+    <div style="padding:28px 28px 22px; display:flex; gap:26px; align-items:flex-start">
+      <div style="width:96px;height:96px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);padding:3px;flex:none">${avatar}</div>
       <div style="flex:1; min-width:0">
-        <div style="font-size:18px; font-weight:800">@${esc(ig)}</div>
-        <div style="font-size:12px; color:var(--dim); margin-top:2px">${esc(ws.name)}</div>
-        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
-          <button class="kbtn" style="padding:7px 14px; font-size:11px" data-igopen="${escAttr(url)}">Abrir no Instagram &#8599;</button>
-          <button class="obtn" style="padding:7px 14px; font-size:11px" data-ighandle-edit>Trocar @</button>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+          <span style="font-size:20px; font-weight:700">${esc(ig)}</span>
+          <button class="obtn" style="padding:6px 13px; font-size:11px" data-igopen="${escAttr(url)}">Abrir no Instagram &#8599;</button>
+          <button class="obtn" style="padding:6px 12px; font-size:11px" data-ighandle-edit>Trocar @</button>
         </div>
+        <div style="margin-top:15px; display:flex; gap:28px">${st(posts,'posts')}${st(followers,'seguidores')}${st(following,'seguindo')}</div>
+        <div style="margin-top:12px; font-size:13px; font-weight:700">${esc(name)}</div>
+        ${bio}${linkHtml}
       </div>
     </div>
-    <div style="padding:16px 18px 6px; font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600">PRÉVIA DO FEED</div>
-    <div style="padding:2px 18px 16px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px">${tiles}</div>
-    <div style="padding:14px 18px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim); line-height:1.55">${note}</div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:3px; border-top:1px solid var(--border)">${tiles}</div>
+    ${note?`<div style="padding:14px 18px; font-size:10.5px; color:var(--dim); line-height:1.5">${note}</div>`:''}
   </div>`;
 }
 function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Funcionários','Metas','Relatórios','Calculadoras'];
