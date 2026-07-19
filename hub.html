@@ -266,6 +266,17 @@ const FMT_META={ post:{label:'Post',dim:'1080 × 1080',ar:'1 / 1'}, carrossel:{l
 const BASE_NICHES=['Advocacia','Estética','Odontologia','Imobiliária','Restaurante','Barbearia','Academia','Contabilidade','Concessionária','Construção','Clínica','Marketing','Mentoria'];
 let TEMPLATES=[], TPL_FAV=new Set(), TPL_DEPLOYED=new Set(), tplLoadedFor=null, tplLoading=false, CANVA_CONN=null;
 const CANVA_FN=SB_URL+'/functions/v1/canva';
+const IG_FN=SB_URL+'/functions/v1/instagram';
+let IG_FEED={}, igFeedLoading={};
+async function loadIgFeed(wsId){
+  if(!wsId || IG_FEED[wsId]!==undefined || igFeedLoading[wsId]) return;
+  igFeedLoading[wsId]=true;
+  try{ const r=await fetch(IG_FN+'/media?ws='+encodeURIComponent(wsId)); IG_FEED[wsId]=await r.json(); }
+  catch(e){ IG_FEED[wsId]={media:[],error:'rede'}; }
+  igFeedLoading[wsId]=false;
+  const ws=activeWs();
+  if(S.screen==='h3' && S.ig==='perfil' && ws && ws.id===wsId) renderScreen();
+}
 async function ensureTemplates(){
   if(tplLoadedFor===S.wsId || tplLoading || !S.wsId) return;
   tplLoading=true; const ws=S.wsId;
@@ -793,7 +804,19 @@ function igPerfil(){
       </div></div>`;
   }
   const url='https://instagram.com/'+ig;
-  const tiles=Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; border:1px solid var(--border); border-radius:8px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
+  const feed = ws ? IG_FEED[ws.id] : null;
+  if(ws && feed===undefined){ loadIgFeed(ws.id); }
+  let tiles, note;
+  if(feed && feed.media && feed.media.length){
+    tiles = feed.media.slice(0,9).map(m=>`<div data-igopen="${escAttr(m.permalink||url)}" title="Ver no Instagram" style="aspect-ratio:1/1; border-radius:8px; cursor:pointer; border:1px solid var(--border); background:#000 center/cover no-repeat; background-image:url('${escAttr(m.url)}')"></div>`).join('');
+    note = `<span style="color:var(--accent)">&#9679;</span> Feed ao vivo conectado${feed.username?' (@'+esc(feed.username)+')':''}. Clique num post pra abrir no Instagram.`;
+  } else {
+    tiles = Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; border:1px solid var(--border); border-radius:8px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
+    if(feed===undefined) note = 'Carregando seu feed...';
+    else if(feed && feed.error) note = 'Não consegui puxar o feed agora ('+esc(String(feed.error))+'). Use o botão Abrir acima.';
+    else if(feed && feed.connected) note = 'Conectado, mas sem posts recentes pra mostrar.';
+    else note = 'Pra puxar seus posts reais aqui, falta ligar a API do Instagram (função e token no Supabase).';
+  }
   return `<div class="card" style="max-width:600px; overflow:hidden; padding:0">
     <div style="padding:26px; display:flex; align-items:center; gap:18px; border-bottom:1px solid var(--border)">
       <div style="width:78px;height:78px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);display:flex;align-items:center;justify-content:center;flex:none;padding:3px"><div style="width:100%;height:100%;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px">${initials(ws.name)}</div></div>
@@ -808,7 +831,7 @@ function igPerfil(){
     </div>
     <div style="padding:16px 18px 6px; font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600">PRÉVIA DO FEED</div>
     <div style="padding:2px 18px 16px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px">${tiles}</div>
-    <div style="padding:14px 18px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim); line-height:1.55">O Instagram não permite embutir o perfil ao vivo dentro de outro site (diferente do seu site, que abre normal). Esta é a prévia do hub. Pra puxar seus <b style="color:var(--ink)">posts reais</b> aqui dentro, dá pra conectar um feed ao vivo grátis.</div>
+    <div style="padding:14px 18px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim); line-height:1.55">${note}</div>
   </div>`;
 }
 function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Funcionários','Metas','Relatórios','Calculadoras'];
