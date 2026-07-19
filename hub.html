@@ -793,16 +793,22 @@ function igPerfil(){
       </div></div>`;
   }
   const url='https://instagram.com/'+ig;
-  return `<div class="card" style="max-width:560px; overflow:hidden; padding:0">
-    <div style="padding:26px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border)">
-      <div style="width:64px;height:64px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:58px;height:58px;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">${initials(ws.name)}</div></div>
-      <div style="flex:1; min-width:0"><div style="font-size:16px; font-weight:800">@${ig}</div><div style="font-size:11px; color:var(--dim)">${ws.name}</div></div>
+  const tiles=Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; border:1px solid var(--border); border-radius:8px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
+  return `<div class="card" style="max-width:600px; overflow:hidden; padding:0">
+    <div style="padding:26px; display:flex; align-items:center; gap:18px; border-bottom:1px solid var(--border)">
+      <div style="width:78px;height:78px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);display:flex;align-items:center;justify-content:center;flex:none;padding:3px"><div style="width:100%;height:100%;border-radius:99px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px">${initials(ws.name)}</div></div>
+      <div style="flex:1; min-width:0">
+        <div style="font-size:18px; font-weight:800">@${esc(ig)}</div>
+        <div style="font-size:12px; color:var(--dim); margin-top:2px">${esc(ws.name)}</div>
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+          <button class="kbtn" style="padding:7px 14px; font-size:11px" data-igopen="${escAttr(url)}">Abrir no Instagram &#8599;</button>
+          <button class="obtn" style="padding:7px 14px; font-size:11px" data-ighandle-edit>Trocar @</button>
+        </div>
+      </div>
     </div>
-    <div style="padding:22px 26px; display:flex; gap:12px; align-items:center; flex-wrap:wrap">
-      <button class="kbtn" data-igopen="${url}">Abrir no Instagram &#8599;</button>
-      <button class="obtn" data-ighandle-edit>Trocar @</button>
-      <div style="flex:1; min-width:60px"></div><span style="font-size:11px; color:var(--dim)" class="mono">${url.replace('https://','')}</span>
-    </div>
+    <div style="padding:16px 18px 6px; font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600">PRÉVIA DO FEED</div>
+    <div style="padding:2px 18px 16px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px">${tiles}</div>
+    <div style="padding:14px 18px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim); line-height:1.55">O Instagram não permite embutir o perfil ao vivo dentro de outro site (diferente do seu site, que abre normal). Esta é a prévia do hub. Pra puxar seus <b style="color:var(--ink)">posts reais</b> aqui dentro, dá pra conectar um feed ao vivo grátis.</div>
   </div>`;
 }
 function h5(){ /* Agenda */ const gestao=['Visão geral','Saúde financeira','Funcionários','Metas','Relatórios','Calculadoras'];
