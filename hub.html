@@ -210,15 +210,26 @@
   .hmart img { width:100%; height:100%; object-fit:contain; display:block; }
   .hmfoot { display:flex; gap:10px; margin-top:16px; }
   /* editor pptx */
-  .pptxed { position:fixed; inset:0; z-index:180; background:var(--bg); display:flex; flex-direction:column; }
+  .pptxed { position:fixed; inset:0; z-index:180; background:#0d0f0d; display:flex; flex-direction:column; }
   .pptxbar { display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--card2); }
   .pptxbar b { font-size:14px; font-weight:700; }
-  .pptxwrap { flex:1; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:28px; }
-  .pptxstage { position:relative; background:#fff; border-radius:6px; box-shadow:0 20px 60px rgba(0,0,0,.5); overflow:hidden; flex:none; }
+  .pptxbody { flex:1; display:flex; min-height:0; }
+  .pptxrail { width:66px; border-right:1px solid var(--border); background:var(--card2); display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 0; flex:none; }
+  .railbtn { width:48px; height:48px; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:9px; font-weight:600; color:var(--dim); cursor:pointer; border:1px solid transparent; }
+  .railbtn span { font-size:16px; line-height:1; }
+  .railbtn:hover { background:var(--card); color:var(--ink); border-color:var(--border); }
+  .pptxwrap { flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:30px; background:radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0) 0 0/22px 22px; }
+  .pptxstage { position:relative; background:#fff; border-radius:4px; box-shadow:0 24px 70px rgba(0,0,0,.55); flex:none; }
   .pptxprops { display:flex; align-items:center; gap:8px; padding:10px 18px; border-top:1px solid var(--border); background:var(--card2); min-height:48px; }
+  .pptxpages { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--border); background:var(--card2); overflow-x:auto; align-items:center; }
+  .pgthumb { width:50px; height:64px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--dim); cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .pgthumb.on { outline:2px solid var(--accent); color:var(--ink); }
+  .pgadd { width:50px; height:64px; border-radius:6px; border:1.5px dashed var(--border); color:var(--dim); cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center; font-size:18px; }
   .edel { cursor:move; box-sizing:border-box; }
   .edel:hover { outline:1px solid rgba(34,224,124,.5); }
-  .edel.sel { outline:2px solid var(--accent); outline-offset:0; }
+  .edel.sel { outline:1.5px solid var(--accent); }
+  .edh { position:absolute; width:11px; height:11px; background:#fff; border:1.5px solid var(--accent); border-radius:2px; z-index:6; }
+  .edh.tl{top:-6px;left:-6px;cursor:nwse-resize} .edh.tr{top:-6px;right:-6px;cursor:nesw-resize} .edh.bl{bottom:-6px;left:-6px;cursor:nesw-resize} .edh.br{bottom:-6px;right:-6px;cursor:nwse-resize}
   .edtext[contenteditable="true"] { cursor:text; background:rgba(255,255,255,.06); }
   /* claude embutido (VS Code no navegador) */
   .idewrap { max-width:1180px; }
@@ -488,28 +499,49 @@ function edElHtml(el,i,scale){
 }
 function edProps(){ const E=EDIT; if(E.sel==null) return '<span style="color:var(--dim);font-size:11px">Clique para selecionar · arraste para mover · duplo-clique no texto para editar</span>';
   const el=E.slides[E.page].els[E.sel]; if(!el) return '';
-  if(el.type==='text') return `<span style="font-size:11px;color:var(--dim);margin-right:4px">Texto</span><button class="obtn" data-edfont="-2">A−</button><button class="obtn" data-edfont="2">A+</button><button class="obtn ${el.bold?'':''}" data-edbold>Negrito</button><input type="color" id="edColor" value="${/^#[0-9A-Fa-f]{6}$/.test(el.color)?el.color:'#000000'}" style="width:36px;height:28px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer">`;
+  if(el.type==='text'){ const al=el.align||'l'; const ab=(v,t)=>`<button class="obtn" data-edalign="${v}" style="${al===v?'border-color:var(--accent);color:var(--accent)':''}">${t}</button>`;
+    return `<span style="font-size:11px;color:var(--dim);margin-right:4px">Texto</span><button class="obtn" data-edfont="-2">A−</button><button class="obtn" data-edfont="2">A+</button><button class="obtn" style="${el.bold?'border-color:var(--accent);color:var(--accent)':''}" data-edbold>Negrito</button>${ab('l','Esq')}${ab('ctr','Centro')}${ab('r','Dir')}<input type="color" id="edColor" value="${/^#[0-9A-Fa-f]{6}$/.test(el.color)?el.color:'#000000'}" style="width:36px;height:28px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer">`; }
   return `<span style="font-size:11px;color:var(--dim)">${el.type==='image'?'Imagem':'Forma'} selecionada</span>`;
 }
 function renderEditor(){ const E=EDIT; if(!E) return;
   let ov=$('pptxEditor'); if(!ov){ ov=document.createElement('div'); ov.id='pptxEditor'; ov.className='pptxed'; document.body.appendChild(ov); }
   const slide=E.slides[E.page]||{els:[]};
-  const stageW=Math.min(540,E.w), scale=stageW/E.w; E.scale=scale;
-  ov.innerHTML=`<div class="pptxbar"><b>${esc(E.title)}</b><span style="color:var(--dim);font-size:11px">${E.w}×${E.h}${E.slides.length>1?` · pág ${E.page+1}/${E.slides.length}`:''}</span><div style="flex:1"></div>${E.slides.length>1?`<button class="obtn" data-edpg="-1">‹</button><button class="obtn" data-edpg="1">›</button>`:''}<button class="obtn" data-edadd>+ Texto</button><button class="obtn" data-eddel>Excluir</button><button class="kbtn" data-edsave>Salvar</button><button class="obtn" data-edclose>Fechar</button></div>
-    <div class="pptxwrap"><div class="pptxstage" id="pptxStage" style="width:${stageW}px;height:${(E.h*scale).toFixed(1)}px">${slide.els.map((el,i)=>edElHtml(el,i,scale)).join('')}</div></div>
+  const stageW=Math.min(560,E.w), scale=stageW/E.w; E.scale=scale;
+  const pages=`<div class="pptxpages">${E.slides.map((s,i)=>`<div class="pgthumb ${i===E.page?'on':''}" data-edgoto="${i}">${i+1}</div>`).join('')}<div class="pgadd" data-edaddpage title="Adicionar página">+</div></div>`;
+  ov.innerHTML=`<div class="pptxbar"><span style="width:9px;height:9px;border-radius:99px;background:var(--accent)"></span><b>${esc(E.title)}</b><span style="color:var(--dim);font-size:11px">${E.w}×${E.h}${E.slides.length>1?` · pág ${E.page+1}/${E.slides.length}`:''}</span><div style="flex:1"></div><button class="kbtn" data-edsave>Salvar</button><button class="obtn" data-edclose>Fechar</button></div>
+    <div class="pptxbody">
+      <div class="pptxrail">
+        <div class="railbtn" data-edadd><span>T</span>Texto</div>
+        <div class="railbtn" data-eddel><span>&#10005;</span>Excluir</div>
+      </div>
+      <div class="pptxwrap"><div class="pptxstage" id="pptxStage" style="width:${stageW}px;height:${(E.h*scale).toFixed(1)}px">${slide.els.map((el,i)=>edElHtml(el,i,scale)).join('')}</div></div>
+    </div>
+    ${pages}
     <div class="pptxprops">${edProps()}</div>`;
   wireEditor();
 }
 function syncProps(){ const p=document.querySelector('#pptxEditor .pptxprops'); if(p) p.innerHTML=edProps(); }
 function commitEdit(el){ if(!el) return; const ce=el.querySelector('.edtext'); if(!ce) return; ce.setAttribute('contenteditable','false'); const m=EDIT&&EDIT.slides[EDIT.page].els[+el.dataset.eidx]; if(m) m.text=(ce.innerText!=null?ce.innerText:ce.textContent); }
+function showHandles(stage){ stage.querySelectorAll('.edh').forEach(h=>h.remove()); if(EDIT.sel==null) return; const el=stage.querySelector('.edel[data-eidx="'+EDIT.sel+'"]'); if(el) el.insertAdjacentHTML('beforeend','<div class="edh tl" data-h="tl"></div><div class="edh tr" data-h="tr"></div><div class="edh bl" data-h="bl"></div><div class="edh br" data-h="br"></div>'); }
 function wireEditor(){ const stage=$('pptxStage'); if(!stage) return;
-  stage.onmousedown=e=>{ const el=e.target.closest('.edel'); if(!el) return;
-    if(el.querySelector('.edtext[contenteditable="true"]')) return; // já editando: deixa o cursor do texto funcionar
-    // sai do modo de edição de outro texto, se houver
-    const editingOther=stage.querySelector('.edtext[contenteditable="true"]'); if(editingOther) commitEdit(editingOther.closest('.edel'));
+  showHandles(stage);
+  stage.onmousedown=e=>{ const handle=e.target.closest('.edh'); const el=e.target.closest('.edel'); if(!el) return;
+    if(!handle && el.querySelector('.edtext[contenteditable="true"]')) return; // editando: deixa o cursor do texto funcionar
+    const editingOther=stage.querySelector('.edtext[contenteditable="true"]'); if(editingOther && editingOther.closest('.edel')!==el) commitEdit(editingOther.closest('.edel'));
     const i=+el.dataset.eidx; const m=EDIT.slides[EDIT.page].els[i], sc=EDIT.scale;
-    if(EDIT.sel!==i){ EDIT.sel=i; stage.querySelectorAll('.edel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); syncProps(); }
-    const sx=e.clientX, sy=e.clientY, ox=m.x, oy=m.y;
+    if(EDIT.sel!==i){ EDIT.sel=i; stage.querySelectorAll('.edel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); showHandles(stage); syncProps(); }
+    const sx=e.clientX, sy=e.clientY;
+    if(handle){ const c=handle.dataset.h, ox=m.x, oy=m.y, ow=m.w, oh=m.h;
+      const rmove=ev=>{ const dx=(ev.clientX-sx)/sc, dy=(ev.clientY-sy)/sc; let x=ox,y=oy,w=ow,h=oh;
+        if(c.indexOf('r')>=0) w=Math.max(8,ow+dx);
+        if(c.indexOf('l')>=0){ w=Math.max(8,ow-dx); x=ox+(ow-w); }
+        if(c.indexOf('b')>=0) h=Math.max(8,oh+dy);
+        if(c.indexOf('t')>=0){ h=Math.max(8,oh-dy); y=oy+(oh-h); }
+        m.x=x;m.y=y;m.w=w;m.h=h; el.style.left=(x*sc).toFixed(1)+'px'; el.style.top=(y*sc).toFixed(1)+'px'; el.style.width=(w*sc).toFixed(1)+'px'; el.style.height=(h*sc).toFixed(1)+'px'; };
+      const rup=()=>{ document.removeEventListener('mousemove',rmove); document.removeEventListener('mouseup',rup); };
+      document.addEventListener('mousemove',rmove); document.addEventListener('mouseup',rup); e.preventDefault(); e.stopPropagation(); return;
+    }
+    const ox=m.x, oy=m.y;
     const move=ev=>{ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)<3) return; m.x=ox+(ev.clientX-sx)/sc; m.y=oy+(ev.clientY-sy)/sc; el.style.left=(m.x*sc).toFixed(1)+'px'; el.style.top=(m.y*sc).toFixed(1)+'px'; };
     const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
     document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault();
@@ -1033,6 +1065,9 @@ document.addEventListener('click',e=>{
   const edcl=e.target.closest('[data-edclose]'); if(edcl){ edClose(); return; }
   const edf=e.target.closest('[data-edfont]'); if(edf){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.size=Math.max(6,(m.size||18)+(+edf.dataset.edfont)); renderEditor(); } } return; }
   const edb=e.target.closest('[data-edbold]'); if(edb){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.bold=!m.bold; renderEditor(); } } return; }
+  const eda=e.target.closest('[data-edalign]'); if(eda){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.align=eda.dataset.edalign; renderEditor(); } } return; }
+  const edgo=e.target.closest('[data-edgoto]'); if(edgo){ if(EDIT){ EDIT.page=+edgo.dataset.edgoto; EDIT.sel=null; renderEditor(); } return; }
+  const edap=e.target.closest('[data-edaddpage]'); if(edap){ if(EDIT){ EDIT.slides.push({els:[]}); EDIT.page=EDIT.slides.length-1; EDIT.sel=null; renderEditor(); } return; }
   const edh=e.target.closest('[data-edithub]'); if(edh){ editHub(edh.dataset.edithub); return; }
   const edc=e.target.closest('[data-editcanva]'); if(edc){ editCanva(edc.dataset.editcanva); return; }
   const vwt=e.target.closest('[data-viewtpl]'); if(vwt){ openTplPreview(vwt.dataset.viewtpl); return; }
