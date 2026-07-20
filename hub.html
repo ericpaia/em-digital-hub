@@ -506,18 +506,21 @@ async function openPptxEditor(url,title,tplId){
   renderEditor();
 }
 const ALIGN={l:'left',ctr:'center',r:'right',just:'justify'};
+const EDFONTS=['Montserrat','Inter','Poppins','Arial','Helvetica','Georgia','Times New Roman','Courier New','Verdana','Impact'];
+function ffam(f){ return f?"'"+String(f).replace(/['"\\<>]/g,'')+"', sans-serif":'inherit'; }
 function edElHtml(el,i,scale){
   const st=`position:absolute;left:${(el.x*scale).toFixed(1)}px;top:${(el.y*scale).toFixed(1)}px;width:${(el.w*scale).toFixed(1)}px;height:${(el.h*scale).toFixed(1)}px;${el.rot?`transform:rotate(${el.rot}deg);`:''}`;
   const sel=EDIT.sel===i?' sel':'';
   if(el.type==='image') return `<div class="edel${sel}" data-eidx="${i}" style="${st}"><img src="${el.src}" draggable="false" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></div>`;
-  if(el.type==='text'){ const fs=Math.max(6,el.size*1.3333*scale); return `<div class="edel edtxt${sel}" data-eidx="${i}" style="${st}display:flex;flex-direction:column;justify-content:center"><div class="edtext" style="color:${el.color};font-size:${fs.toFixed(1)}px;font-weight:${el.bold?700:400};text-align:${ALIGN[el.align]||'left'};line-height:1.15;white-space:pre-wrap;outline:none;width:100%">${esc(el.text)}</div></div>`; }
+  if(el.type==='text'){ const fs=Math.max(6,el.size*1.3333*scale); return `<div class="edel edtxt${sel}" data-eidx="${i}" style="${st}display:flex;flex-direction:column;justify-content:center"><div class="edtext" style="color:${el.color};font-size:${fs.toFixed(1)}px;font-weight:${el.bold?700:400};font-family:${ffam(el.font)};text-align:${ALIGN[el.align]||'left'};line-height:1.15;white-space:pre-wrap;outline:none;width:100%">${esc(el.text)}</div></div>`; }
   if(el.fill) return `<div class="edel${sel}" data-eidx="${i}" style="${st}background:${el.fill}"></div>`;
   return `<div class="edel${sel}" data-eidx="${i}" style="${st}"></div>`;
 }
 function edProps(){ const E=EDIT; if(E.sel==null) return '<span style="color:var(--dim);font-size:11px">Clique para selecionar · arraste para mover · duplo-clique no texto para editar</span>';
   const el=E.slides[E.page].els[E.sel]; if(!el) return '';
   if(el.type==='text'){ const al=el.align||'l'; const ab=(v,t)=>`<button class="obtn" data-edalign="${v}" style="${al===v?'border-color:var(--accent);color:var(--accent)':''}">${t}</button>`;
-    return `<span style="font-size:11px;color:var(--dim);margin-right:4px">Texto</span><button class="obtn" data-edfont="-2">A−</button><button class="obtn" data-edfont="2">A+</button><button class="obtn" style="${el.bold?'border-color:var(--accent);color:var(--accent)':''}" data-edbold>Negrito</button>${ab('l','Esq')}${ab('ctr','Centro')}${ab('r','Dir')}<input type="color" id="edColor" value="${/^#[0-9A-Fa-f]{6}$/.test(el.color)?el.color:'#000000'}" style="width:36px;height:28px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer">`; }
+    const fontSel=`<select id="edFont" style="background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:11px;cursor:pointer"><option value="">Fonte do modelo</option>${EDFONTS.map(f=>`<option value="${escAttr(f)}" ${el.font===f?'selected':''}>${esc(f)}</option>`).join('')}</select>`;
+    return `<span style="font-size:11px;color:var(--dim);margin-right:4px">Texto</span>${fontSel}<button class="obtn" data-edfont="-2">A−</button><button class="obtn" data-edfont="2">A+</button><button class="obtn" style="${el.bold?'border-color:var(--accent);color:var(--accent)':''}" data-edbold>Negrito</button>${ab('l','Esq')}${ab('ctr','Centro')}${ab('r','Dir')}<input type="color" id="edColor" value="${/^#[0-9A-Fa-f]{6}$/.test(el.color)?el.color:'#000000'}" style="width:36px;height:28px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer">`; }
   return `<span style="font-size:11px;color:var(--dim)">${el.type==='image'?'Imagem':'Forma'} selecionada</span>`;
 }
 function renderEditor(){ const E=EDIT; if(!E) return;
@@ -1184,6 +1187,7 @@ async function logout(){ try{ await sb.auth.signOut(); }catch(e){} WORKSPACES=[]
 /* ---------- boot ---------- */
 document.addEventListener('change', async e=>{
   const wp=e.target.closest('#wsPick'); if(wp){ S.wsId=wp.value; localStorage.setItem('emhub_ws', S.wsId); tplLoadedFor=null; await loadWorkspaceLeads(S.wsId); render(); return; }
+  const ef=e.target.closest('#edFont'); if(ef){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.font=ef.value||null; renderEditor(); } } return; }
 });
 document.addEventListener('input', e=>{ const s=e.target.closest('#tplSearch'); if(s){ S.tpl.q=s.value; rerenderTplResults(); return; }
   const c=e.target.closest('#edColor'); if(c){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.color=c.value; const el=$('pptxStage'); if(el){ const d=el.querySelector('.edel[data-eidx="'+EDIT.sel+'"] .edtext'); if(d) d.style.color=c.value; } } } } });
