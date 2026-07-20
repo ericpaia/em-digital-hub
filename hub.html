@@ -723,23 +723,28 @@ function h1(){
 function h2(){ const ws=activeWs(); const site=ws&&ws.site_url;
   const dom=site?site.replace(/^https?:\/\//,'').replace(/\/+$/,''):'seunegocio.com.br';
   const abrir=site?`<button class="obtn" style="padding:6px 14px; font-size:10px" data-igopen="${escAttr(site)}">Abrir &#8599;</button>`:`<button class="obtn" style="padding:6px 14px; font-size:10px" data-toast="Conecte seu site nas Configurações">Abrir</button>`;
-  const preview=site
-    ? `<div style="position:relative; background:#0F0C0A"><iframe src="${escAttr(site)}" title="Preview do site" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" style="width:100%; height:520px; border:0; display:block; background:#fff"></iframe><div style="padding:10px 18px; border-top:1px solid var(--border); font-size:10.5px; color:var(--dim)">Preview ao vivo de <b style="color:var(--ink)">${esc(dom)}</b>. Se aparecer em branco, o site bloqueia ser embutido; use o botão <b>Abrir</b> acima.</div></div>`
-    : `<div style="background:#0F0C0A">
-      <div style="padding:36px 44px; border-bottom:1px solid var(--border)"><div style="font-size:9px; letter-spacing:.22em; color:var(--accent); font-weight:700">ATENDIMENTO SOB MEDIDA</div><div style="margin-top:10px; font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.1">Tudo que seu negócio<br>precisa, num só lugar</div><div style="margin-top:14px; display:flex; gap:10px"><span class="kbtn">Ver serviços</span><span class="obtn">Chamar no WhatsApp</span></div></div>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:22px 44px 30px">
-        ${[['Combo Premium','R$ 249'],['Plano Mensal','R$ 149'],['Sessão Avulsa','R$ 89']].map(([n,p])=>`<div style="border:1px solid var(--border); border-radius:14px; overflow:hidden"><div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do produto</div><div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">${n}</div><div class="num" style="font-size:10px; color:var(--accent); margin-top:2px">${p}</div></div></div>`).join('')}
-      </div>
-    </div>`;
-  return head(site?esc(dom.toUpperCase()):'SEU SITE NO AR','Meu site')+`
+  const bar=`<div style="display:flex; align-items:center; gap:9px; padding:11px 16px; border-bottom:1px solid var(--border); flex:none"><span style="width:11px;height:11px;border-radius:99px;background:#E5484D"></span><span style="width:11px;height:11px;border-radius:99px;background:#EAB308"></span><span style="width:11px;height:11px;border-radius:99px;background:#22C55E"></span><div style="flex:1; margin:0 12px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:6px 16px; font-size:11px; color:var(--dim); text-align:center">${esc(dom)}</div>${abrir}</div>`;
+  if(site){
+    return `<div class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 150px); min-height:520px">
+      ${bar}
+      <iframe src="${escAttr(site)}" title="Site" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" style="flex:1; width:100%; border:0; display:block; background:#fff"></iframe>
+    </div>
+    <div style="margin-top:9px; font-size:10.5px; color:var(--dim)">Se aparecer em branco, o site bloqueia ser embutido; use o botão <b style="color:var(--ink)">Abrir</b> na barra.</div>`;
+  }
+  return head('SEU SITE NO AR','Meu site')+`
   <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:18px; max-width:1180px">
     ${stat('VISITAS, 7 DIAS','1.247','')}${stat('CLIQUES NO WHATSAPP','96','')}
     <div class="card" style="padding:20px"><div class="lbl">MAIS VISTO</div><div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Combo Premium<br><span style="font-size:11px; color:var(--dim); font-weight:500">214 visitas</span></div></div>
     <div class="card" style="padding:20px"><div class="lbl">ÚLTIMA PUBLICAÇÃO</div><div style="margin-top:8px; font-size:15px; font-weight:700; line-height:1.3">Hoje, 09:14<br><span style="font-size:11px; color:var(--dim); font-weight:500">catálogo atualizado</span></div></div>
   </div>
   <div class="card" style="padding:0; overflow:hidden; max-width:1180px">
-    <div style="display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border)"><span style="width:10px;height:10px;border-radius:99px;background:#E5484D"></span><span style="width:10px;height:10px;border-radius:99px;background:#EAB308"></span><span style="width:10px;height:10px;border-radius:99px;background:#22C55E"></span><div style="flex:1; margin:0 20px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:6px 16px; font-size:11px; color:var(--dim); text-align:center">${esc(dom)}</div>${abrir}</div>
-    ${preview}
+    ${bar}
+    <div style="background:#0F0C0A">
+      <div style="padding:36px 44px; border-bottom:1px solid var(--border)"><div style="font-size:9px; letter-spacing:.22em; color:var(--accent); font-weight:700">ATENDIMENTO SOB MEDIDA</div><div style="margin-top:10px; font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.1">Tudo que seu negócio<br>precisa, num só lugar</div><div style="margin-top:14px; display:flex; gap:10px"><span class="kbtn">Ver serviços</span><span class="obtn">Chamar no WhatsApp</span></div></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:22px 44px 30px">
+        ${[['Combo Premium','R$ 249'],['Plano Mensal','R$ 149'],['Sessão Avulsa','R$ 89']].map(([n,p])=>`<div style="border:1px solid var(--border); border-radius:14px; overflow:hidden"><div style="height:86px; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px); display:flex; align-items:center; justify-content:center; font-family:monospace; font-size:9px; color:var(--dim)">foto do produto</div><div style="padding:10px 12px"><div style="font-size:11px; font-weight:700">${n}</div><div class="num" style="font-size:10px; color:var(--accent); margin-top:2px">${p}</div></div></div>`).join('')}
+      </div>
+    </div>
   </div>`; }
 
 /* --- Instagram with working tabs --- */
@@ -821,28 +826,30 @@ function igPerfil(){
   const linkHtml = siteLink ? `<div style="margin-top:5px"><span data-igopen="${escAttr(siteLink)}" style="font-size:12px;color:var(--accent);font-weight:600;cursor:pointer">${esc(siteLink.replace(/^https?:\/\//,'').replace(/\/+$/,''))}</span></div>` : '';
   let tiles, note='';
   if(feed && feed.media && feed.media.length){
-    tiles = feed.media.slice(0,9).map(m=>`<div data-igopen="${escAttr(m.permalink||url)}" title="Ver no Instagram" style="aspect-ratio:1/1; cursor:pointer; background:#000 center/cover no-repeat; background-image:url('${escAttr(m.url)}')"></div>`).join('');
+    tiles = feed.media.slice(0,12).map(m=>`<div data-igopen="${escAttr(m.permalink||url)}" title="Ver no Instagram" style="aspect-ratio:1/1; cursor:pointer; background:#000 center/cover no-repeat; background-image:url('${escAttr(m.url)}')"></div>`).join('');
   } else {
     tiles = Array.from({length:9}).map(()=>`<div style="aspect-ratio:1/1; background:repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 8px, transparent 8px 16px)"></div>`).join('');
     if(feed===undefined) note = 'Carregando o perfil...';
     else if(feed && feed.error) note = 'Não consegui puxar o feed agora ('+esc(String(feed.error))+'). Use o botão Abrir acima.';
     else note = 'Sem posts recentes pra mostrar.';
   }
-  return `<div class="card" style="max-width:640px; overflow:hidden; padding:0">
-    <div style="padding:28px 28px 22px; display:flex; gap:26px; align-items:flex-start">
-      <div style="width:96px;height:96px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);padding:3px;flex:none">${avatar}</div>
+  const tabs=`<div style="display:flex; justify-content:center; gap:56px; border-top:1px solid var(--border)">${[['PUBLICAÇÕES',1],['REELS',0],['MARCAÇÕES',0]].map(([t,on])=>`<div style="padding:15px 4px; font-size:11px; letter-spacing:.08em; font-weight:700; color:${on?'var(--ink)':'var(--dim)'}; border-top:2px solid ${on?'var(--ink)':'transparent'}; margin-top:-1px">${t}</div>`).join('')}</div>`;
+  return `<div class="card" style="max-width:935px; overflow:hidden; padding:0">
+    <div style="padding:32px 40px 26px; display:flex; gap:56px; align-items:center">
+      <div style="width:128px;height:128px;border-radius:99px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF);padding:3px;flex:none">${avatar}</div>
       <div style="flex:1; min-width:0">
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-          <span style="font-size:20px; font-weight:700">${esc(ig)}</span>
-          <button class="obtn" style="padding:6px 13px; font-size:11px" data-igopen="${escAttr(url)}">Abrir no Instagram &#8599;</button>
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+          <span style="font-size:22px; font-weight:600">${esc(ig)}</span>
+          <button class="obtn" style="padding:6px 14px; font-size:11px" data-igopen="${escAttr(url)}">Abrir no Instagram &#8599;</button>
           <button class="obtn" style="padding:6px 12px; font-size:11px" data-ighandle-edit>Trocar @</button>
         </div>
-        <div style="margin-top:15px; display:flex; gap:28px">${st(posts,'posts')}${st(followers,'seguidores')}${st(following,'seguindo')}</div>
-        <div style="margin-top:12px; font-size:13px; font-weight:700">${esc(name)}</div>
+        <div style="margin-top:18px; display:flex; gap:38px">${st(posts,'publicações')}${st(followers,'seguidores')}${st(following,'seguindo')}</div>
+        <div style="margin-top:14px; font-size:13px; font-weight:700">${esc(name)}</div>
         ${bio}${linkHtml}
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:3px; border-top:1px solid var(--border)">${tiles}</div>
+    ${tabs}
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:3px">${tiles}</div>
     ${note?`<div style="padding:14px 18px; font-size:10.5px; color:var(--dim); line-height:1.5">${note}</div>`:''}
   </div>`;
 }
