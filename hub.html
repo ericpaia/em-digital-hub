@@ -168,7 +168,7 @@
   .tplsearch input::placeholder { color:var(--dim); }
   .tplsearch:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--glow); }
   .tplsec { margin-top:22px; }
-  .tpltitle { font-size:13px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .tpltitle { font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .tpltitle span { font-size:10px; font-weight:600; color:var(--dim); border:1px solid var(--border); border-radius:99px; padding:2px 8px; }
   .tplempty { padding:22px; border:1px dashed var(--border); border-radius:14px; color:var(--dim); font-size:12px; text-align:center; }
   .tplgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:16px; }
@@ -339,10 +339,12 @@ function tplResultsHtml(){
   const explore=TEMPLATES.filter(matchTpl);
   const suggested=TEMPLATES.filter(x=>x.source==='canva'&&matchTpl(x));
   const deployed=TEMPLATES.filter(x=>TPL_DEPLOYED.has(x.id)&&matchTpl(x));
-  const sec=(title,badge,items,empty)=>`<div class="tplsec"><div class="tpltitle">${title}${badge!=null?`<span>${badge}</span>`:''}</div>${items.length?`<div class="tplgrid">${items.map(tplCard).join('')}</div>`:`<div class="tplempty">${empty}</div>`}</div>`;
-  return sec('Modelos sugeridos','do Canva',suggested,'Conecte a pasta do Canva para ver seus modelos sugeridos aqui.')
+  const wsName=(activeWs()&&activeWs().name)||'você';
+  const claudeCard=`<div class="tplcard" data-claudeq="Escolha o melhor modelo e monte um post pro meu Instagram sobre: "><div class="tplart" style="aspect-ratio:4/5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;border-style:dashed;border-color:var(--accent)"><div style="width:46px;height:46px;border-radius:13px;background:var(--accent);color:#0A0C0A;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:21px">C</div><b style="color:var(--accent);font-size:12.5px">Claude decide</b><span style="font-size:10px;color:var(--dim);text-align:center;padding:0 12px;line-height:1.4">Deixa o Claude escolher o modelo e montar o post</span></div></div>`;
+  const sec=(title,badge,items,empty,lead)=>`<div class="tplsec"><div class="tpltitle">${title}${badge!=null?`<span>${badge}</span>`:''}</div>${(items.length||lead)?`<div class="tplgrid">${lead||''}${items.map(tplCard).join('')}</div>`:`<div class="tplempty">${empty}</div>`}</div>`;
+  return sec('Modelos '+wsName,null,suggested,'Conecte a pasta do Canva para ver seus modelos aqui.',claudeCard)
     + sec('Modelos implantados',null,deployed,'Nenhum modelo implantado ainda. Implante um modelo da biblioteca abaixo.')
-    + sec('Explorar a biblioteca',explore.length,explore, TEMPLATES.length?'Nenhum modelo encontrado. Ajuste a busca ou os filtros.':'Nenhum modelo ainda. Importe um modelo ou conecte o Canva.');
+    + sec('Explorar a biblioteca de modelos',explore.length,explore, TEMPLATES.length?'Nenhum modelo encontrado. Ajuste a busca ou os filtros.':'Nenhum modelo ainda. Importe um modelo ou conecte o Canva.');
 }
 function rerenderTplResults(){ const r=$('tplResults'); if(r) r.innerHTML=tplResultsHtml(); }
 function tplSkeleton(){ return `<div class="tplhead"><div><h1 style="margin:0;font-size:22px;font-weight:800">Biblioteca de modelos</h1></div></div><div class="tplgrid" style="margin-top:20px">${Array.from({length:8}).map(()=>`<div class="tplcard sk"><div class="tplart" style="aspect-ratio:4/5"></div><div class="tplmeta"><div class="skline"></div><div class="skline sm"></div></div></div>`).join('')}</div>`; }
@@ -507,7 +509,7 @@ function renderEditor(){ const E=EDIT; if(!E) return;
   let ov=$('pptxEditor'); if(!ov){ ov=document.createElement('div'); ov.id='pptxEditor'; ov.className='pptxed'; document.body.appendChild(ov); }
   const slide=E.slides[E.page]||{els:[]};
   const stageW=Math.min(560,E.w), scale=stageW/E.w; E.scale=scale;
-  const pages=`<div class="pptxpages">${E.slides.map((s,i)=>`<div class="pgthumb ${i===E.page?'on':''}" data-edgoto="${i}">${i+1}</div>`).join('')}<div class="pgadd" data-edaddpage title="Adicionar página">+</div></div>`;
+  const pages=`<div class="pptxpages">${E.slides.map((s,i)=>`<div class="pgthumb ${i===E.page?'on':''}" data-edgoto="${i}">${i+1}</div>`).join('')}<div class="pgadd" data-edaddpage title="Adicionar página">+</div><div style="flex:1"></div><button class="obtn" data-edduppage style="font-size:10px">Duplicar página</button></div>`;
   ov.innerHTML=`<div class="pptxbar"><span style="width:9px;height:9px;border-radius:99px;background:var(--accent)"></span><b>${esc(E.title)}</b><span style="color:var(--dim);font-size:11px">${E.w}×${E.h}${E.slides.length>1?` · pág ${E.page+1}/${E.slides.length}`:''}</span><div style="flex:1"></div><button class="kbtn" data-edsave>Salvar</button><button class="obtn" data-edclose>Fechar</button></div>
     <div class="pptxbody">
       <div class="pptxrail">
@@ -1068,6 +1070,7 @@ document.addEventListener('click',e=>{
   const eda=e.target.closest('[data-edalign]'); if(eda){ if(EDIT&&EDIT.sel!=null){ const m=EDIT.slides[EDIT.page].els[EDIT.sel]; if(m&&m.type==='text'){ m.align=eda.dataset.edalign; renderEditor(); } } return; }
   const edgo=e.target.closest('[data-edgoto]'); if(edgo){ if(EDIT){ EDIT.page=+edgo.dataset.edgoto; EDIT.sel=null; renderEditor(); } return; }
   const edap=e.target.closest('[data-edaddpage]'); if(edap){ if(EDIT){ EDIT.slides.push({els:[]}); EDIT.page=EDIT.slides.length-1; EDIT.sel=null; renderEditor(); } return; }
+  const eddup=e.target.closest('[data-edduppage]'); if(eddup){ if(EDIT){ const copy=JSON.parse(JSON.stringify(EDIT.slides[EDIT.page]||{els:[]})); EDIT.slides.splice(EDIT.page+1,0,copy); EDIT.page=EDIT.page+1; EDIT.sel=null; renderEditor(); } return; }
   const edh=e.target.closest('[data-edithub]'); if(edh){ editHub(edh.dataset.edithub); return; }
   const edc=e.target.closest('[data-editcanva]'); if(edc){ editCanva(edc.dataset.editcanva); return; }
   const vwt=e.target.closest('[data-viewtpl]'); if(vwt){ openTplPreview(vwt.dataset.viewtpl); return; }
