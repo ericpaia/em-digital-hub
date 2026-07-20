@@ -89,11 +89,17 @@ Deno.serve(async (req) => {
 
   const token = await ensureFresh(ws, conn);
   const profile = await fetchProfile(token);
-  const fields = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp";
+  const mfull = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count";
+  const msafe = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp";
   try {
-    const r = await fetch(`${IG}/me/media?fields=${fields}&limit=12&access_token=${encodeURIComponent(token)}`);
-    const d = await r.json();
-    if (d && d.error) return json({ media: [], connected: true, username: conn.username, profile, error: d.error.message || "token" });
+    let d: any = null, lastErr = "token";
+    for (const f of [mfull, msafe]) {
+      const r = await fetch(`${IG}/me/media?fields=${f}&limit=12&access_token=${encodeURIComponent(token)}`);
+      const j = await r.json();
+      if (j && !j.error) { d = j; break; }
+      lastErr = (j && j.error && j.error.message) || "token";
+    }
+    if (!d) return json({ media: [], connected: true, username: conn.username, profile, error: lastErr });
     const media = (d.data || [])
       .map((m: any) => ({
         id: m.id,
@@ -101,6 +107,8 @@ Deno.serve(async (req) => {
         url: m.media_type === "VIDEO" ? (m.thumbnail_url || m.media_url) : (m.media_url || m.thumbnail_url),
         permalink: m.permalink,
         caption: m.caption || "",
+        likes: typeof m.like_count === "number" ? m.like_count : undefined,
+        comments: typeof m.comments_count === "number" ? m.comments_count : undefined,
       }))
       .filter((m: any) => m.url);
     return json({ media, connected: true, username: conn.username, profile });
