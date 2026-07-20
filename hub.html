@@ -37,12 +37,15 @@
   .whoami s { font-size:9px; color:var(--dim); text-decoration:none; display:block; }
   .live { margin:0 18px 16px; display:flex; align-items:center; gap:7px; font-size:10px; color:var(--dim); }
   .live .d { width:6px; height:6px; border-radius:99px; background:var(--accent); flex:none; }
-  .navwrap { flex:1; overflow-y:auto; }
-  .navgroup .gt { padding:8px 18px 6px; font-size:9px; letter-spacing:.2em; color:var(--dim); font-weight:600; }
-  .navgroup { padding:8px 0 4px; }
-  .navitem { padding:8px 18px 8px 16px; cursor:pointer; font-size:12.5px; border-left:2px solid transparent; color:var(--dim); font-weight:500; }
-  .navitem:hover { color:var(--ink); }
-  .navitem.on { border-left-color:var(--accent); color:var(--accent); font-weight:700; }
+  .navwrap { flex:1; overflow-y:auto; padding:0 10px; }
+  .navgroup .gt { padding:12px 8px 6px; font-size:9px; letter-spacing:.18em; color:var(--dim); font-weight:700; text-transform:uppercase; }
+  .navgroup { padding:2px 0; }
+  .navitem { display:flex; align-items:center; gap:11px; padding:9px 10px; margin:1px 0; border-radius:10px; cursor:pointer; font-size:12.5px; color:var(--dim); font-weight:500; transition:background .12s, color .12s; }
+  .navitem .ni { display:flex; align-items:center; color:var(--dim); flex:none; transition:color .12s; }
+  .navitem:hover { background:rgba(255,255,255,0.05); color:var(--ink); }
+  .navitem:hover .ni { color:var(--ink); }
+  .navitem.on { background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); font-weight:700; }
+  .navitem.on .ni { color:var(--accent); }
   .metacard { margin:14px 18px 0; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:14px; }
   .metacard .l { font-size:9px; letter-spacing:.16em; color:var(--dim); font-weight:600; }
   .metacard .v { margin-top:6px; font-size:12px; font-weight:600; }
@@ -617,11 +620,27 @@ const LABELS = {
   console:{ user:'EM Digital',ini:'EM',role:'Owner',top:'CONSOLE OWNER',badge:'6 CLIENTES',ml:'META DO MÊS',mv:'R$ 1.500 de R$ 2.000',mp:'75%',ms:'faltam 2 hubs para a meta' },
   hub:{ user:'Cliente',ini:'CL',role:'Proprietário',top:'HUB DO CLIENTE',badge:'PLANO COMPLETO',ml:'META DO MÊS',mv:'R$ 18.400 de R$ 25.000',mp:'74%',ms:'faltam R$ 6.600' },
 };
+const ICON={
+  c1:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  c2:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  c3:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+  c4:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  c5:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  h1:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  h2:'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  h3:'<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>',
+  h4:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  hcrm:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  h5:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  h6:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  h7:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+};
+function navIcon(id){ return `<svg class="ni" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICON[id]||''}</svg>`; }
 
 /* ---------- shell ---------- */
 function renderShell(){
   const me=meLabel(), ws=activeWs();
-  const navHtml=`<div class="navwrap">${NAV[S.mode].map(g=>`<div class="navgroup"><div class="gt">${g.t}</div>${g.items.map(([id,l])=>`<div class="navitem ${S.screen===id?'on':''}" data-nav="${id}">${l}</div>`).join('')}</div>`).join('')}</div>`;
+  const navHtml=`<div class="navwrap">${NAV[S.mode].map(g=>`<div class="navgroup"><div class="gt">${g.t}</div>${g.items.map(([id,l])=>`<div class="navitem ${S.screen===id?'on':''}" data-nav="${id}">${navIcon(id)}<span>${l}</span></div>`).join('')}</div>`).join('')}</div>`;
   if(S.mode==='console'){
     const L=LABELS.console, clientes=WORKSPACES.filter(w=>w.kind==='client').length;
     $('side').innerHTML =
