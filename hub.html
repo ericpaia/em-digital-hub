@@ -500,18 +500,26 @@ function renderEditor(){ const E=EDIT; if(!E) return;
     <div class="pptxprops">${edProps()}</div>`;
   wireEditor();
 }
+function syncProps(){ const p=document.querySelector('#pptxEditor .pptxprops'); if(p) p.innerHTML=edProps(); }
+function commitEdit(el){ if(!el) return; const ce=el.querySelector('.edtext'); if(!ce) return; ce.setAttribute('contenteditable','false'); const m=EDIT&&EDIT.slides[EDIT.page].els[+el.dataset.eidx]; if(m) m.text=(ce.innerText!=null?ce.innerText:ce.textContent); }
 function wireEditor(){ const stage=$('pptxStage'); if(!stage) return;
-  stage.onmousedown=e=>{ const el=e.target.closest('.edel'); if(!el) return; const ce=el.querySelector('[contenteditable="true"]'); if(ce) return;
-    const i=+el.dataset.eidx; EDIT.sel=i; const m=EDIT.slides[EDIT.page].els[i], sc=EDIT.scale;
-    stage.querySelectorAll('.edel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel');
-    const sx=e.clientX, sy=e.clientY, ox=m.x, oy=m.y; let moved=false;
-    const move=ev=>{ moved=true; m.x=ox+(ev.clientX-sx)/sc; m.y=oy+(ev.clientY-sy)/sc; el.style.left=(m.x*sc).toFixed(1)+'px'; el.style.top=(m.y*sc).toFixed(1)+'px'; };
-    const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); renderEditor(); };
+  stage.onmousedown=e=>{ const el=e.target.closest('.edel'); if(!el) return;
+    if(el.querySelector('.edtext[contenteditable="true"]')) return; // já editando: deixa o cursor do texto funcionar
+    // sai do modo de edição de outro texto, se houver
+    const editingOther=stage.querySelector('.edtext[contenteditable="true"]'); if(editingOther) commitEdit(editingOther.closest('.edel'));
+    const i=+el.dataset.eidx; const m=EDIT.slides[EDIT.page].els[i], sc=EDIT.scale;
+    if(EDIT.sel!==i){ EDIT.sel=i; stage.querySelectorAll('.edel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); syncProps(); }
+    const sx=e.clientX, sy=e.clientY, ox=m.x, oy=m.y;
+    const move=ev=>{ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)<3) return; m.x=ox+(ev.clientX-sx)/sc; m.y=oy+(ev.clientY-sy)/sc; el.style.left=(m.x*sc).toFixed(1)+'px'; el.style.top=(m.y*sc).toFixed(1)+'px'; };
+    const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
     document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault();
   };
   stage.ondblclick=e=>{ const el=e.target.closest('.edel.edtxt'); if(!el) return; const ce=el.querySelector('.edtext'); if(!ce) return;
     ce.setAttribute('contenteditable','true'); ce.focus();
-    ce.onblur=()=>{ ce.setAttribute('contenteditable','false'); const m=EDIT.slides[EDIT.page].els[+el.dataset.eidx]; if(m) m.text=(ce.innerText!=null?ce.innerText:ce.textContent); };
+    try{ const rng=document.createRange(); rng.selectNodeContents(ce); rng.collapse(false); const s=window.getSelection(); s.removeAllRanges(); s.addRange(rng); }catch(_){}
+    ce.onblur=()=>commitEdit(el);
+    ce.onkeydown=ev=>{ if(ev.key==='Escape'){ ev.preventDefault(); ce.blur(); } };
+    e.preventDefault();
   };
 }
 async function edSave(){ const E=EDIT, ws=activeWs(); if(!E||!ws) return;
