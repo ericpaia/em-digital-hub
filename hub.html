@@ -209,6 +209,7 @@
   .hmart { border-radius:14px; overflow:hidden; position:relative; background:var(--card2); border:1px solid var(--border); width:100%; }
   .hmart img { width:100%; height:100%; object-fit:contain; display:block; }
   .hmfoot { display:flex; gap:10px; margin-top:16px; }
+  .tplmodalbox { width:min(1080px,96vw); max-height:92vh; padding:22px 24px; }
   /* editor pptx */
   .pptxed { position:fixed; inset:0; z-index:180; background:#0d0f0d; display:flex; flex-direction:column; }
   .pptxbar { display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--card2); }
@@ -304,7 +305,7 @@ async function ensureTemplates(){
     TEMPLATES=t.data||[]; TPL_FAV=new Set((f.data||[]).map(r=>r.template_id)); TPL_DEPLOYED=new Set((d.data||[]).map(r=>r.template_id)); CANVA_CONN=(c.data&&c.data[0])||null; tplLoadedFor=ws;
   }catch(e){ TEMPLATES=[]; tplLoadedFor=ws; }
   tplLoading=false;
-  if(S.screen==='h3'&&S.ig==='modelos') renderScreen();
+  refreshTpl();
 }
 function matchTpl(x){ const t=S.tpl;
   if(t.fmt!=='todos' && x.format!==t.fmt) return false;
@@ -348,18 +349,32 @@ function tplResultsHtml(){
 }
 function rerenderTplResults(){ const r=$('tplResults'); if(r) r.innerHTML=tplResultsHtml(); }
 function tplSkeleton(){ return `<div class="tplhead"><div><h1 style="margin:0;font-size:22px;font-weight:800">Biblioteca de modelos</h1></div></div><div class="tplgrid" style="margin-top:20px">${Array.from({length:8}).map(()=>`<div class="tplcard sk"><div class="tplart" style="aspect-ratio:4/5"></div><div class="tplmeta"><div class="skline"></div><div class="skline sm"></div></div></div>`).join('')}</div>`; }
-function igModelos(){ if(tplLoadedFor!==S.wsId){ ensureTemplates(); return tplSkeleton(); } return tplLibrary(); }
-function tplLibrary(){ const t=S.tpl;
+function igModelos(){ if(tplLoadedFor!==S.wsId){ ensureTemplates(); return tplSkeleton(); } return tplLauncher(); }
+function tplLauncher(){
+  const deployed=TEMPLATES.filter(x=>TPL_DEPLOYED.has(x.id));
+  return `<div class="card" style="max-width:1180px; padding:26px; display:flex; align-items:center; gap:22px; flex-wrap:wrap">
+    <div style="width:56px;height:56px;border-radius:15px;background:var(--accent);color:#0A0C0A;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none">&#9638;</div>
+    <div style="flex:1; min-width:220px"><div style="font-size:17px;font-weight:800">Biblioteca de modelos</div><div style="font-size:12px;color:var(--dim);margin-top:4px">Modelos do Canva e do Hub, com busca, filtros por nicho e o Claude pra montar o post. ${TEMPLATES.length} na biblioteca.</div></div>
+    <button class="kbtn" data-tplopen style="padding:12px 22px">Abrir biblioteca</button>
+  </div>
+  ${deployed.length?`<div class="tplsec" style="max-width:1180px"><div class="tpltitle">Modelos implantados <span>${deployed.length}</span></div><div class="tplgrid">${deployed.map(tplCard).join('')}</div></div>`:''}`;
+}
+function tplBodyHtml(){ const t=S.tpl;
   const fmtPills=[['todos','Todos'],['post','Post'],['carrossel','Carrossel'],['story','Story']].map(([id,l])=>`<button class="pill ${t.fmt===id?'on':''}" data-tplfmt="${id}">${l}${id!=='todos'?`<span style="opacity:.55;font-weight:500"> · ${FMT_META[id].dim}</span>`:''}</button>`).join('');
   const niches=[...new Set([...BASE_NICHES, ...TEMPLATES.map(x=>x.niche).filter(Boolean)])];
   const nichePills=`<button class="chip ${t.niche==='todos'?'on':''}" data-tplniche="todos">Todos os nichos</button>`+niches.map(n=>`<button class="chip ${t.niche===n?'on':''}" data-tplniche="${escAttr(n)}">${esc(n)}</button>`).join('');
-  return `<div class="tplhead"><div><h1 style="margin:0;font-size:22px;font-weight:800">Biblioteca de modelos</h1><div style="font-size:11px;color:var(--dim);margin-top:4px">Modelos da sua pasta do Canva e criados no Hub</div></div><div style="flex:1"></div><button class="obtn" data-tplimport>+ Importar imagem/HTML</button></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 14px">${fmtPills}</div>
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px">${fmtPills}</div>
   ${canvaStrip()}
   <div class="tplsearch"><span>⌕</span><input id="tplSearch" placeholder="Pesquisar por palavra-chave (advogado, estética, barbearia...)" value="${escAttr(t.q)}"></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 2px;align-items:center">${nichePills}<span style="flex:1;min-width:20px"></span><button class="chip ${t.fav?'on':''}" data-tplfav>★ Favoritos</button></div>
   <div id="tplResults">${tplResultsHtml()}</div>`;
 }
+function renderTplModal(html){ let m=$('tplModal'); if(!m){ m=document.createElement('div'); m.className='hmodal'; m.id='tplModal'; m.style.zIndex='148'; document.body.appendChild(m); } m.innerHTML=html; m.hidden=false; }
+function closeTplModal(){ const m=$('tplModal'); if(m) m.hidden=true; }
+function openTplModal(){ if(tplLoadedFor!==S.wsId) ensureTemplates();
+  renderTplModal(`<div class="hmback" data-tplmodalclose></div><div class="hmbox tplmodalbox"><div class="hmhead" style="align-items:center;margin-bottom:12px"><b style="font-size:16px">Biblioteca de modelos</b><div style="flex:1"></div><button class="obtn" data-tplimport>+ Importar</button><button class="obtn" data-tplmodalclose>Fechar</button></div><div id="tplModalBody">${tplBodyHtml()}</div></div>`);
+}
+function refreshTpl(){ const mb=$('tplModalBody'); if(mb){ mb.innerHTML=tplBodyHtml(); } else if(S.screen==='h3'&&S.ig==='modelos'){ renderScreen(); } }
 function canvaStrip(){ const c=CANVA_CONN;
   if(c && c.status==='connected'){
     return `<div class="canvastrip"><span class="d" style="background:var(--accent)"></span><div><b style="font-size:12px">Canva conectado</b><div style="font-size:10.5px;color:var(--dim)">Pasta: ${esc(c.folder_name||c.folder_id||'—')}${c.last_sync_at?` · sincronizado ${timeAgo(c.last_sync_at)} atrás`:''}</div></div><div style="flex:1"></div><button class="obtn" data-canvasync>↻ Sincronizar</button><button class="obtn" data-canvaconnect>Trocar pasta</button><button class="obtn" data-canvadisconnect>Desconectar</button></div>`;
@@ -402,7 +417,7 @@ async function saveImport(){ const ws=activeWs(); if(!ws) return;
   const dims={post:[1080,1080],carrossel:[1080,1350],story:[1080,1920]}[format];
   const { data, error } = await sb.from('templates').insert({ workspace_id:ws.id, source:'import', title, format, niche, tags, thumb_url:thumb, page_count:1, width:dims[0], height:dims[1], created_by:S.user&&S.user.id }).select().single();
   if(error){ toast('Erro ao importar modelo'); return; }
-  TEMPLATES.unshift(data); closeModal(); if(S.screen==='h3'&&S.ig==='modelos') renderScreen(); toast('Modelo importado');
+  TEMPLATES.unshift(data); closeModal(); refreshTpl(); toast('Modelo importado');
 }
 async function toggleFav(id){ const ws=activeWs(); if(!ws||!S.user) return; const on=TPL_FAV.has(id);
   if(on){ TPL_FAV.delete(id); await sb.from('template_favorites').delete().eq('template_id',id).eq('user_id',S.user.id); }
@@ -1037,9 +1052,9 @@ function wireConv(){ const w=$('walist'); if(!w)return;
 }
 
 document.addEventListener('click',e=>{
-  const nav=e.target.closest('[data-nav]'); if(nav){ S.screen=nav.dataset.nav; render(); return; }
-  const md=e.target.closest('.modesw [data-mode]'); if(md){ S.mode=md.dataset.mode; S.screen=S.mode==='console'?'c1':'h1'; render(); return; }
-  const ig=e.target.closest('[data-ig]'); if(ig){ S.ig=ig.dataset.ig; renderScreen(); return; }
+  const nav=e.target.closest('[data-nav]'); if(nav){ closeTplModal(); S.screen=nav.dataset.nav; render(); return; }
+  const md=e.target.closest('.modesw [data-mode]'); if(md){ closeTplModal(); S.mode=md.dataset.mode; S.screen=S.mode==='console'?'c1':'h1'; render(); return; }
+  const ig=e.target.closest('[data-ig]'); if(ig){ closeTplModal(); S.ig=ig.dataset.ig; renderScreen(); return; }
   const cr=e.target.closest('[data-crm]'); if(cr){ S.crm=cr.dataset.crm; renderScreen(); return; }
   const fin=e.target.closest('[data-fin]'); if(fin){ window.location.href='financeiro.html'; return; }
   const nl=e.target.closest('[data-newlead]'); if(nl){ newLead(); return; }
@@ -1054,9 +1069,11 @@ document.addEventListener('click',e=>{
   const igp=e.target.closest('[data-igprofile]'); if(igp){ const ws=activeWs(); if(ws&&ws.instagram){ window.open('https://instagram.com/'+ws.instagram,'_blank','noopener'); } else { S.ig='perfil'; renderScreen(); } return; }
   const ihs=e.target.closest('[data-ighandle-save]'); if(ihs){ const i=$('igHandle'); saveIgHandle(i&&i.value); return; }
   const ihe=e.target.closest('[data-ighandle-edit]'); if(ihe){ const ws=activeWs(); saveIgHandle(prompt('@ do Instagram:', (ws&&ws.instagram)||'')); return; }
-  const tfm=e.target.closest('[data-tplfmt]'); if(tfm){ S.tpl.fmt=tfm.dataset.tplfmt; renderScreen(); return; }
-  const tni=e.target.closest('[data-tplniche]'); if(tni){ S.tpl.niche=tni.dataset.tplniche; renderScreen(); return; }
-  const tfv=e.target.closest('[data-tplfav]'); if(tfv){ S.tpl.fav=!S.tpl.fav; renderScreen(); return; }
+  const tfm=e.target.closest('[data-tplfmt]'); if(tfm){ S.tpl.fmt=tfm.dataset.tplfmt; refreshTpl(); return; }
+  const tni=e.target.closest('[data-tplniche]'); if(tni){ S.tpl.niche=tni.dataset.tplniche; refreshTpl(); return; }
+  const tfv=e.target.closest('[data-tplfav]'); if(tfv){ S.tpl.fav=!S.tpl.fav; refreshTpl(); return; }
+  const topen=e.target.closest('[data-tplopen]'); if(topen){ openTplModal(); return; }
+  const tmc=e.target.closest('[data-tplmodalclose]'); if(tmc){ closeTplModal(); return; }
   const star=e.target.closest('[data-favtpl]'); if(star){ toggleFav(star.dataset.favtpl); return; }
   const dpl=e.target.closest('[data-deploytpl]'); if(dpl){ toggleDeploy(dpl.dataset.deploytpl); return; }
   const use=e.target.closest('[data-usetpl]'); if(use){ useTemplate(use.dataset.usetpl); return; }
